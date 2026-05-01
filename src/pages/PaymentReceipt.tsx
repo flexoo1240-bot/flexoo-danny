@@ -130,9 +130,17 @@ const PaymentReceipt = () => {
                   {pay.status === "confirmed" && (
                     <>
                       <div className="rounded-xl p-3 bg-primary/5 border border-primary/20 mb-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <CheckCircle className="w-4 h-4 text-primary" />
-                          <p className="text-xs font-bold text-primary">Payment Confirmed</p>
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-primary" />
+                            <p className="text-xs font-bold text-primary">Payment Confirmed</p>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/payment-approved?payment=${pay.id}`)}
+                            className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                          >
+                            <Sparkles className="w-3 h-3" /> Celebrate
+                          </button>
                         </div>
                         <p className="text-[11px] text-muted-foreground leading-relaxed">
                           Your payment has been verified and approved by admin.
