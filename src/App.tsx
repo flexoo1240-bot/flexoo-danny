@@ -22,6 +22,7 @@ import DailyTasks from "./pages/DailyTasks.tsx";
 import BuyCode from "./pages/BuyCode.tsx";
 import Payment from "./pages/Payment.tsx";
 import PaymentReceipt from "./pages/PaymentReceipt.tsx";
+import PaymentApproved from "./pages/PaymentApproved.tsx";
 import Admin from "./pages/Admin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
