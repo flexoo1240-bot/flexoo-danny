@@ -240,11 +240,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_fpc_code: {
+        Args: { p_code: string; p_payment_id: string; p_user_id: string }
+        Returns: string
+      }
+      admin_delete_fpc_code: { Args: { p_id: string }; Returns: undefined }
+      admin_regenerate_fpc_code: { Args: { p_id: string }; Returns: string }
+      admin_toggle_fpc_used: {
+        Args: { p_id: string; p_used: boolean }
+        Returns: undefined
+      }
+      admin_update_payment: {
+        Args: {
+          p_amount: number
+          p_id: string
+          p_receipt_url: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      admin_update_payment_status: {
+        Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_user_profile: {
+        Args: { p_balance: number; p_level: string; p_profile_id: string }
+        Returns: undefined
+      }
       admin_update_withdrawal: {
         Args: {
           admin_user_id: string
           new_status: string
           withdrawal_id: string
+        }
+        Returns: undefined
+      }
+      admin_update_withdrawal_account: {
+        Args: {
+          p_account_name: string
+          p_account_number: string
+          p_bank: string
+          p_id: string
         }
         Returns: undefined
       }
@@ -257,6 +293,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_current_user_admin: { Args: never; Returns: boolean }
       process_referral: {
         Args: { new_user_id: string; referrer_code: string }
         Returns: undefined
