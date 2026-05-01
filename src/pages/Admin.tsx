@@ -193,6 +193,9 @@ const Admin = () => {
 
   useEffect(() => { fetchData(); }, [filter, tab]);
 
+  // All admin mutations go through SECURITY DEFINER RPCs which re-verify the
+  // admin role server-side. Direct table writes are no longer used.
+
   const handleWithdrawalAction = async (id: string, action: "approved" | "rejected") => {
     setProcessing(id);
     const { error } = await supabase.rpc("admin_update_withdrawal", {
@@ -208,10 +211,10 @@ const Admin = () => {
 
   const handlePaymentAction = async (id: string, action: "confirmed" | "rejected") => {
     setProcessing(id);
-    const { error } = await supabase
-      .from("payments")
-      .update({ status: action, reviewed_at: new Date().toISOString() })
-      .eq("id", id);
+    const { error } = await supabase.rpc("admin_update_payment_status", {
+      p_id: id,
+      p_status: action,
+    });
     if (error) toast.error(error.message || "Failed to process");
     else toast.success(`Payment ${action}!`);
     setProcessing(null);
@@ -229,15 +232,12 @@ const Admin = () => {
       return;
     }
     setProcessing(p.id);
-    const updates: { amount: number; status: string; receipt_url: string | null; reviewed_at?: string } = {
-      amount: parsed.data.amount,
-      status: parsed.data.status,
-      receipt_url: parsed.data.receipt_url || null,
-    };
-    if (parsed.data.status !== p.status && parsed.data.status !== "pending") {
-      updates.reviewed_at = new Date().toISOString();
-    }
-    const { error } = await supabase.from("payments").update(updates).eq("id", p.id);
+    const { error } = await supabase.rpc("admin_update_payment", {
+      p_id: p.id,
+      p_amount: parsed.data.amount,
+      p_status: parsed.data.status,
+      p_receipt_url: parsed.data.receipt_url || "",
+    });
     if (error) toast.error(error.message);
     else toast.success("Payment updated!");
     setEditingPayment(null);
@@ -247,10 +247,11 @@ const Admin = () => {
 
   const handleSaveUser = async (u: UserProfile) => {
     setProcessing(u.id);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ bonus_balance: Number(editBalance), level: editLevel })
-      .eq("id", u.id);
+    const { error } = await supabase.rpc("admin_update_user_profile", {
+      p_profile_id: u.id,
+      p_balance: Number(editBalance),
+      p_level: editLevel,
+    });
     if (error) toast.error(error.message);
     else toast.success("User updated!");
     setEditingUser(null);
@@ -260,10 +261,12 @@ const Admin = () => {
 
   const handleSaveWithdrawalAccount = async (req: WithdrawalRequest) => {
     setProcessing(req.id);
-    const { error } = await supabase
-      .from("withdrawal_requests")
-      .update({ bank_name: editBank, account_number: editAccNum, account_name: editAccName })
-      .eq("id", req.id);
+    const { error } = await supabase.rpc("admin_update_withdrawal_account", {
+      p_id: req.id,
+      p_bank: editBank,
+      p_account_number: editAccNum,
+      p_account_name: editAccName,
+    });
     if (error) toast.error(error.message);
     else toast.success("Account details updated!");
     setEditingWithdrawal(null);
@@ -278,10 +281,10 @@ const Admin = () => {
 
   const handleToggleCodeUsed = async (c: FpcCode) => {
     setProcessing(c.id);
-    const { error } = await supabase
-      .from("fpc_codes")
-      .update({ used: !c.used, used_at: !c.used ? new Date().toISOString() : null, used_for_withdrawal_id: !c.used ? c.used_for_withdrawal_id : null })
-      .eq("id", c.id);
+    const { error } = await supabase.rpc("admin_toggle_fpc_used", {
+      p_id: c.id,
+      p_used: !c.used,
+    });
     if (error) toast.error(error.message);
     else toast.success(`Code marked as ${!c.used ? "used" : "unused"}`);
     setProcessing(null);
@@ -291,25 +294,9 @@ const Admin = () => {
   const handleRegenerateCode = async (c: FpcCode) => {
     if (!confirm(`Regenerate code for payment ${c.payment_id.slice(0, 8)}? Old code "${c.code}" will be deleted.`)) return;
     setProcessing(c.id);
-    const { data: newCodeData, error: genErr } = await supabase.rpc("generate_fpc_code");
-    if (genErr || !newCodeData) {
-      toast.error(genErr?.message || "Failed to generate code");
-      setProcessing(null);
-      return;
-    }
-    const { error: delErr } = await supabase.from("fpc_codes").delete().eq("id", c.id);
-    if (delErr) {
-      toast.error(delErr.message);
-      setProcessing(null);
-      return;
-    }
-    const { error: insErr } = await supabase.from("fpc_codes").insert({
-      user_id: c.user_id,
-      payment_id: c.payment_id,
-      code: newCodeData as string,
-    });
-    if (insErr) toast.error(insErr.message);
-    else toast.success(`New code: ${newCodeData}`);
+    const { data, error } = await supabase.rpc("admin_regenerate_fpc_code", { p_id: c.id });
+    if (error) toast.error(error.message);
+    else toast.success(`New code: ${data}`);
     setProcessing(null);
     fetchData();
   };
@@ -317,7 +304,7 @@ const Admin = () => {
   const handleDeleteCode = async (c: FpcCode) => {
     if (!confirm(`Delete code "${c.code}" permanently?`)) return;
     setProcessing(c.id);
-    const { error } = await supabase.from("fpc_codes").delete().eq("id", c.id);
+    const { error } = await supabase.rpc("admin_delete_fpc_code", { p_id: c.id });
     if (error) toast.error(error.message);
     else toast.success("Code deleted");
     setProcessing(null);
@@ -344,24 +331,13 @@ const Admin = () => {
       toast.error("Please confirm before creating");
       return;
     }
-    // Verify payment exists and belongs to the user
-    const { data: pay, error: payErr } = await supabase
-      .from("payments")
-      .select("id, user_id")
-      .eq("id", parsed.data.payment_id)
-      .maybeSingle();
-    if (payErr) return toast.error(payErr.message);
-    if (!pay) return toast.error("Payment ID not found");
-    if (pay.user_id !== parsed.data.user_id) return toast.error("Payment does not belong to that user");
-    // Ensure code uniqueness
-    const { data: existing } = await supabase.from("fpc_codes").select("id").eq("code", parsed.data.code).maybeSingle();
-    if (existing) return toast.error("Code already exists, choose another");
-    // Ensure no existing code for this payment (UNIQUE constraint will error otherwise)
-    const { data: existingForPayment } = await supabase.from("fpc_codes").select("id").eq("payment_id", parsed.data.payment_id).maybeSingle();
-    if (existingForPayment) return toast.error("This payment already has an FPC code. Use Regenerate instead.");
 
     setProcessing("create-fpc");
-    const { error } = await supabase.from("fpc_codes").insert(parsed.data);
+    const { error } = await supabase.rpc("admin_create_fpc_code", {
+      p_user_id: parsed.data.user_id,
+      p_payment_id: parsed.data.payment_id,
+      p_code: parsed.data.code,
+    });
     if (error) toast.error(error.message);
     else {
       toast.success(`Code ${parsed.data.code} created!`);
