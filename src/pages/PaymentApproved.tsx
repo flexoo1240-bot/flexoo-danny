@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle, Copy, Check, Sparkles, PartyPopper, ArrowRight, Loader2, Wallet, Receipt } from "lucide-react";
+import { CheckCircle, Copy, Check, Sparkles, PartyPopper, ArrowRight, Loader2, Wallet, Receipt, Share2, Download } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
