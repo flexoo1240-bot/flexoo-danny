@@ -138,7 +138,7 @@ const Signup = () => {
                 });
               }
               toast.success("Account created successfully!");
-              navigate("/dashboard");
+              navigate("/signup-success");
             } catch (err: any) {
               setError(err.message || "Something went wrong.");
             } finally {
