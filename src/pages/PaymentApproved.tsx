@@ -448,6 +448,19 @@ const PaymentApproved = () => {
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
+            onClick={handleShare}
+            disabled={sharing}
+            className="w-full h-11 rounded-xl text-sm font-semibold bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {sharing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            Share My Success
+            <Download className="w-3.5 h-3.5 opacity-60" />
+          </button>
+          <button
             onClick={() => navigate("/payment-receipt")}
             className="w-full h-11 rounded-xl text-sm font-semibold border border-border text-foreground hover:bg-secondary/50 transition-colors flex items-center justify-center gap-2"
           >
