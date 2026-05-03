@@ -27,28 +27,55 @@ const SignupSuccess = () => {
   const [fullName, setFullName] = useState<string>("");
   const [referralCode, setReferralCode] = useState<string>("");
   const [sharing, setSharing] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const firedRef = useRef(false);
   const BONUS = 170000;
 
   useEffect(() => {
-    if (firedRef.current) return;
+    if (verifying || firedRef.current) return;
     firedRef.current = true;
     fireConfetti();
-  }, []);
+  }, [verifying]);
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data } = await supabase
+    let cancelled = false;
+    const MAX_ATTEMPTS = 15; // ~15s
+    const fetchProfile = async () =>
+      supabase
         .from("profiles")
-        .select("full_name, referral_code")
+        .select("full_name, referral_code, bonus_balance")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data) {
-        setFullName(data.full_name || "");
-        setReferralCode(data.referral_code || "");
+
+    (async () => {
+      setVerifying(true);
+      setVerifyError(null);
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        if (cancelled) return;
+        const { data, error } = await fetchProfile();
+        if (!cancelled && data) {
+          setFullName(data.full_name || "");
+          setReferralCode(data.referral_code || "");
+          if (Number(data.bonus_balance ?? 0) >= BONUS) {
+            setVerifying(false);
+            return;
+          }
+        }
+        if (error && i === MAX_ATTEMPTS - 1) {
+          setVerifyError("We couldn't verify your bonus. Please try again.");
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      if (!cancelled) {
+        setVerifyError("Bonus not credited yet. Please wait a moment and retry.");
+        setVerifying(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const buildShareCard = async (): Promise<Blob | null> => {
