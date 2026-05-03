@@ -135,6 +135,148 @@ const PaymentApproved = () => {
     }
   };
 
+  const maskCode = (code: string) => {
+    if (code.length <= 6) return code.replace(/.(?=.{2})/g, "•");
+    const head = code.slice(0, 4);
+    const tail = code.slice(-2);
+    return `${head}${"•".repeat(Math.max(4, code.length - 6))}${tail}`;
+  };
+
+  const buildShareCard = async (): Promise<Blob | null> => {
+    if (!payment) return null;
+    const W = 1080;
+    const H = 1350;
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Background gradient
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, "#0a0f0a");
+    bg.addColorStop(1, "#111c0a");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Glow blobs
+    const glow = (x: number, y: number, r: number, color: string) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color);
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    };
+    glow(W / 2, 200, 600, "rgba(132, 204, 22, 0.35)");
+    glow(W, H, 700, "rgba(251, 146, 60, 0.18)");
+
+    // Card
+    const cx = 80;
+    const cy = 220;
+    const cw = W - 160;
+    const ch = H - 440;
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    const r = 48;
+    ctx.beginPath();
+    ctx.moveTo(cx + r, cy);
+    ctx.arcTo(cx + cw, cy, cx + cw, cy + ch, r);
+    ctx.arcTo(cx + cw, cy + ch, cx, cy + ch, r);
+    ctx.arcTo(cx, cy + ch, cx, cy, r);
+    ctx.arcTo(cx, cy, cx + cw, cy, r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(132, 204, 22, 0.35)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Top badge
+    ctx.fillStyle = "#a3e635";
+    ctx.font = "bold 28px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("✓ PAYMENT APPROVED", W / 2, 130);
+
+    // Title
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 76px system-ui, sans-serif";
+    ctx.fillText("Congratulations! 🎉", W / 2, cy + 130);
+
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.font = "32px system-ui, sans-serif";
+    ctx.fillText("My payment has been approved", W / 2, cy + 185);
+
+    // Amount
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "30px system-ui, sans-serif";
+    ctx.fillText("APPROVED AMOUNT", W / 2, cy + 290);
+
+    ctx.fillStyle = "#a3e635";
+    ctx.font = "bold 140px system-ui, sans-serif";
+    ctx.fillText(`₦${payment.amount.toLocaleString()}`, W / 2, cy + 430);
+
+    // Divider
+    ctx.strokeStyle = "rgba(132, 204, 22, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx + 80, cy + 500);
+    ctx.lineTo(cx + cw - 80, cy + 500);
+    ctx.stroke();
+
+    // FPC Code
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "28px system-ui, sans-serif";
+    ctx.fillText("MY FPC CODE", W / 2, cy + 570);
+
+    const masked = payment.fpc_code ? maskCode(payment.fpc_code) : "FPC-••••••";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 70px ui-monospace, 'Courier New', monospace";
+    ctx.fillText(masked, W / 2, cy + 660);
+
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.font = "italic 24px system-ui, sans-serif";
+    ctx.fillText("(code partially hidden for security)", W / 2, cy + 710);
+
+    // Footer
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.font = "28px system-ui, sans-serif";
+    ctx.fillText("Join me — start earning today", W / 2, H - 160);
+
+    ctx.fillStyle = "#a3e635";
+    ctx.font = "bold 38px system-ui, sans-serif";
+    ctx.fillText("flexoo", W / 2, H - 100);
+
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+  };
+
+  const [sharing, setSharing] = useState(false);
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const blob = await buildShareCard();
+      if (!blob) throw new Error("no blob");
+      const file = new File([blob], "my-success.png", { type: "image/png" });
+      const shareData: ShareData = {
+        title: "I got approved! 🎉",
+        text: `My payment of ₦${payment?.amount.toLocaleString()} was just approved!`,
+        files: [file],
+      };
+      if (navigator.canShare && navigator.canShare(shareData) && navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "my-success.png";
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Share card downloaded!");
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") toast.error("Could not share card");
+    } finally {
+      setSharing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center">
