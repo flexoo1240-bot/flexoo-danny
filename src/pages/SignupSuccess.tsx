@@ -27,28 +27,55 @@ const SignupSuccess = () => {
   const [fullName, setFullName] = useState<string>("");
   const [referralCode, setReferralCode] = useState<string>("");
   const [sharing, setSharing] = useState(false);
+  const [verifying, setVerifying] = useState(true);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const firedRef = useRef(false);
   const BONUS = 170000;
 
   useEffect(() => {
-    if (firedRef.current) return;
+    if (verifying || firedRef.current) return;
     firedRef.current = true;
     fireConfetti();
-  }, []);
+  }, [verifying]);
 
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const { data } = await supabase
+    let cancelled = false;
+    const MAX_ATTEMPTS = 15; // ~15s
+    const fetchProfile = async () =>
+      supabase
         .from("profiles")
-        .select("full_name, referral_code")
+        .select("full_name, referral_code, bonus_balance")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data) {
-        setFullName(data.full_name || "");
-        setReferralCode(data.referral_code || "");
+
+    (async () => {
+      setVerifying(true);
+      setVerifyError(null);
+      for (let i = 0; i < MAX_ATTEMPTS; i++) {
+        if (cancelled) return;
+        const { data, error } = await fetchProfile();
+        if (!cancelled && data) {
+          setFullName(data.full_name || "");
+          setReferralCode(data.referral_code || "");
+          if (Number(data.bonus_balance ?? 0) >= BONUS) {
+            setVerifying(false);
+            return;
+          }
+        }
+        if (error && i === MAX_ATTEMPTS - 1) {
+          setVerifyError("We couldn't verify your bonus. Please try again.");
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      }
+      if (!cancelled) {
+        setVerifyError("Bonus not credited yet. Please wait a moment and retry.");
+        setVerifying(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   const buildShareCard = async (): Promise<Blob | null> => {
@@ -171,6 +198,58 @@ const SignupSuccess = () => {
       setSharing(false);
     }
   };
+
+  if (verifying || verifyError) {
+    return (
+      <div className="relative min-h-screen bg-background overflow-hidden flex items-center justify-center px-6">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center text-center max-w-xs">
+          {verifying ? (
+            <>
+              <div className="relative mb-5">
+                <motion.div
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.6, 1, 0.6] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute inset-0 rounded-full bg-primary/30 blur-2xl"
+                />
+                <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Loader2 className="w-9 h-9 text-primary-foreground animate-spin" strokeWidth={2.5} />
+                </div>
+              </div>
+              <p className="text-xs font-bold text-primary uppercase tracking-wider mb-2">
+                Crediting Bonus
+              </p>
+              <h1 className="text-lg font-extrabold text-foreground mb-1.5">
+                Verifying your ₦{BONUS.toLocaleString()} bonus…
+              </h1>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Hang tight while we confirm the deposit to your wallet.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 rounded-full bg-yellow-400/15 border border-yellow-400/40 flex items-center justify-center mb-4">
+                <Sparkles className="w-7 h-7 text-yellow-400" />
+              </div>
+              <h1 className="text-base font-bold text-foreground mb-1.5">
+                Almost there
+              </h1>
+              <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
+                {verifyError}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="h-11 px-6 rounded-xl text-sm font-bold"
+                style={{ background: "var(--gradient-cta)", color: "hsl(150, 30%, 6%)" }}
+              >
+                Retry
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden pb-10">
