@@ -357,8 +357,9 @@ const SignupSuccess = () => {
         >
           <button
             onClick={handleShare}
-            disabled={sharing}
-            className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60"
+            disabled={sharing || verifying || !!verifyError}
+            aria-disabled={sharing || verifying || !!verifyError}
+            className="w-full h-12 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ background: "var(--gradient-cta)", color: "hsl(150, 30%, 6%)" }}
           >
             {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
