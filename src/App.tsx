@@ -25,6 +25,7 @@ import Payment from "./pages/Payment.tsx";
 import PaymentReceipt from "./pages/PaymentReceipt.tsx";
 import PaymentApproved from "./pages/PaymentApproved.tsx";
 import Admin from "./pages/Admin.tsx";
+import AdminLogin from "./pages/AdminLogin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
             <Route path="/payment-receipt" element={<ProtectedRoute><PaymentReceipt /></ProtectedRoute>} />
             <Route path="/payment-approved" element={<ProtectedRoute><PaymentApproved /></ProtectedRoute>} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
