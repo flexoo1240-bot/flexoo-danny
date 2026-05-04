@@ -171,6 +171,10 @@ const SignupSuccess = () => {
   };
 
   const handleShare = async () => {
+    if (verifying || verifyError) {
+      toast.error("Please wait until your bonus is credited");
+      return;
+    }
     setSharing(true);
     try {
       const blob = await buildShareCard();
