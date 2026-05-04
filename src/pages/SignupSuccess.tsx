@@ -44,7 +44,6 @@ const SignupSuccess = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    const MAX_ATTEMPTS = 15; // ~15s
     const fetchProfile = async () =>
       supabase
         .from("profiles")
@@ -55,13 +54,18 @@ const SignupSuccess = () => {
     (async () => {
       setVerifying(true);
       setVerifyError(null);
+      setAttempt(0);
+      setCurrentBalance(null);
       for (let i = 0; i < MAX_ATTEMPTS; i++) {
         if (cancelled) return;
+        setAttempt(i + 1);
         const { data, error } = await fetchProfile();
         if (!cancelled && data) {
           setFullName(data.full_name || "");
           setReferralCode(data.referral_code || "");
-          if (Number(data.bonus_balance ?? 0) >= BONUS) {
+          const bal = Number(data.bonus_balance ?? 0);
+          setCurrentBalance(bal);
+          if (bal >= BONUS) {
             setVerifying(false);
             return;
           }
