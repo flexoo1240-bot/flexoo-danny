@@ -29,6 +29,9 @@ const SignupSuccess = () => {
   const [sharing, setSharing] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [currentBalance, setCurrentBalance] = useState<number | null>(null);
+  const MAX_ATTEMPTS = 15;
   const firedRef = useRef(false);
   const BONUS = 170000;
 
