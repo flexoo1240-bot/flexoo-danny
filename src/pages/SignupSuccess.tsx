@@ -214,7 +214,7 @@ const SignupSuccess = () => {
     return (
       <div className="relative min-h-screen bg-background overflow-hidden flex items-center justify-center px-6">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
-        <div className="relative z-10 flex flex-col items-center text-center max-w-xs">
+        <div className="relative z-10 flex flex-col items-center text-center max-w-xs w-full">
           {verifying ? (
             <>
               <div className="relative mb-5">
@@ -233,9 +233,53 @@ const SignupSuccess = () => {
               <h1 className="text-lg font-extrabold text-foreground mb-1.5">
                 Verifying your ₦{BONUS.toLocaleString()} bonus…
               </h1>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed mb-5">
                 Hang tight while we confirm the deposit to your wallet.
               </p>
+
+              {/* Progress bar */}
+              <div className="w-full max-w-[260px] mb-3">
+                <div className="h-1.5 w-full rounded-full bg-primary/10 overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(100, (attempt / MAX_ATTEMPTS) * 100)}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
+                  <span>Attempt {Math.max(1, attempt)} of {MAX_ATTEMPTS}</span>
+                  <span>
+                    {currentBalance === null
+                      ? "Connecting…"
+                      : `₦${currentBalance.toLocaleString()} / ₦${BONUS.toLocaleString()}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status checklist */}
+              <div className="w-full max-w-[260px] space-y-1.5 mt-2 text-left">
+                <div className="flex items-center gap-2 text-[11px]">
+                  <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="text-muted-foreground">Account created</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  {currentBalance !== null ? (
+                    <CheckCircle className="w-3.5 h-3.5 text-primary shrink-0" />
+                  ) : (
+                    <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                  )}
+                  <span className="text-muted-foreground">Profile loaded</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
+                  <span className="text-muted-foreground">Crediting ₦{BONUS.toLocaleString()} bonus</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] opacity-50">
+                  <Share2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="text-muted-foreground">Sharing unlocks after verification</span>
+                </div>
+              </div>
             </>
           ) : (
             <>
