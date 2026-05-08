@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
-const AD_VIDEOS = [
+const DEFAULT_AD_VIDEOS = [
   "dQw4w9WgXcQ",
   "9bZkp7q19f0",
   "kJQP7kiw5Fk",
