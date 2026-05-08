@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield, CheckCircle, XCircle, Clock, RefreshCw, Lock, Image, CreditCard, Users, BarChart3, User, TrendingUp, Wallet, Activity, Download, Pencil, Save, X, Ticket, Copy, Trash2, RotateCcw, Plus } from "lucide-react";
+import { ArrowLeft, Shield, CheckCircle, XCircle, Clock, RefreshCw, Lock, Image, CreditCard, Users, BarChart3, User, TrendingUp, Wallet, Activity, Download, Pencil, Save, X, Ticket, Copy, Trash2, RotateCcw, Plus, Settings as SettingsIcon, MessageCircle, Send, Mail, Phone, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -72,7 +72,10 @@ interface FpcCode {
   created_at: string;
 }
 
-type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc";
+type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc" | "settings";
+
+const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids"] as const;
+type SettingKey = typeof SETTING_KEYS[number];
 
 const exportToCSV = (rows: Record<string, unknown>[], filename: string) => {
   if (!rows.length) return toast.error("No data to export");
@@ -100,6 +103,14 @@ const Admin = () => {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [fpcCodes, setFpcCodes] = useState<FpcCode[]>([]);
+  const [settings, setSettings] = useState<Record<SettingKey, string>>({
+    whatsapp_url: "",
+    telegram_url: "",
+    support_email: "",
+    support_phone: "",
+    ad_video_ids: "",
+  });
+  const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
   const [fpcSearch, setFpcSearch] = useState("");
   const [showFpcCreate, setShowFpcCreate] = useState(false);
@@ -187,8 +198,28 @@ const Admin = () => {
     } else if (tab === "fpc") {
       const { data } = await supabase.from("fpc_codes").select("*").order("created_at", { ascending: false });
       setFpcCodes((data as FpcCode[]) || []);
+    } else if (tab === "settings") {
+      const { data } = await supabase.from("app_settings").select("key, value");
+      const next = { ...settings };
+      (data || []).forEach((row: { key: string; value: string | null }) => {
+        if ((SETTING_KEYS as readonly string[]).includes(row.key)) {
+          next[row.key as SettingKey] = row.value ?? "";
+        }
+      });
+      setSettings(next);
     }
     setLoading(false);
+  };
+
+  const handleSaveSetting = async (key: SettingKey) => {
+    setSavingSetting(key);
+    const { error } = await supabase.rpc("admin_update_setting", {
+      p_key: key,
+      p_value: settings[key],
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Setting saved!");
+    setSavingSetting(null);
   };
 
   useEffect(() => { fetchData(); }, [filter, tab]);
@@ -404,6 +435,7 @@ const Admin = () => {
     { key: "payments", label: "Payments", icon: <Image className="w-3.5 h-3.5" /> },
     { key: "users", label: "Users", icon: <Users className="w-3.5 h-3.5" /> },
     { key: "fpc", label: "FPC Codes", icon: <Ticket className="w-3.5 h-3.5" /> },
+    { key: "settings", label: "Settings", icon: <SettingsIcon className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -1054,6 +1086,65 @@ const Admin = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* Settings Tab */}
+        {tab === "settings" && (
+          loading ? (
+            <div className="text-center py-12">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {([
+                { key: "whatsapp_url" as SettingKey, label: "WhatsApp Support Link", icon: MessageCircle, placeholder: "https://wa.me/2348000000000" },
+                { key: "telegram_url" as SettingKey, label: "Telegram Support Link", icon: Send, placeholder: "https://t.me/yourchannel" },
+                { key: "support_email" as SettingKey, label: "Support Email", icon: Mail, placeholder: "support@flexoo.com" },
+                { key: "support_phone" as SettingKey, label: "Support Phone", icon: Phone, placeholder: "+234 800 0000" },
+                { key: "ad_video_ids" as SettingKey, label: "Ad Video YouTube IDs (comma-separated)", icon: Video, placeholder: "dQw4w9WgXcQ,9bZkp7q19f0" },
+              ]).map(({ key, label, icon: Icon, placeholder }) => (
+                <div key={key} className="glass-card rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Icon className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <p className="text-[11px] font-bold text-foreground">{label}</p>
+                  </div>
+                  {key === "ad_video_ids" ? (
+                    <textarea
+                      value={settings[key]}
+                      onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={settings[key]}
+                      onChange={(e) => setSettings((s) => ({ ...s, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary/50 border border-border text-[11px] text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary"
+                    />
+                  )}
+                  <button
+                    onClick={() => handleSaveSetting(key)}
+                    disabled={savingSetting === key}
+                    className="btn-cta mt-3 w-full h-9 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {savingSetting === key ? (
+                      <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <><Save className="w-3 h-3" /> Save</>
+                    )}
+                  </button>
+                </div>
+              ))}
+              <p className="text-[10px] text-muted-foreground text-center pt-2">
+                Settings update instantly across the app for all users.
+              </p>
+            </div>
+          )
         )}
       </motion.div>
 

@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       daily_tasks: {
         Row: {
           completed_at: string
@@ -261,6 +279,10 @@ export type Database = {
       }
       admin_update_payment_status: {
         Args: { p_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_setting: {
+        Args: { p_key: string; p_value: string }
         Returns: undefined
       }
       admin_update_user_profile: {

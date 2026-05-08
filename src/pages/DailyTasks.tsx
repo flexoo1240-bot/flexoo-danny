@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
-const AD_VIDEOS = [
+const DEFAULT_AD_VIDEOS = [
   "dQw4w9WgXcQ",
   "9bZkp7q19f0",
   "kJQP7kiw5Fk",
@@ -40,6 +40,7 @@ const DailyTasks = () => {
   const [adCountdown, setAdCountdown] = useState(30);
   const [adPlaying, setAdPlaying] = useState(false);
   const [currentVideoId, setCurrentVideoId] = useState("");
+  const [adVideos, setAdVideos] = useState<string[]>(DEFAULT_AD_VIDEOS);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -56,6 +57,20 @@ const DailyTasks = () => {
     };
     fetchTasks();
   }, [user]);
+
+  // Load admin-configured ad videos
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "ad_video_ids")
+        .maybeSingle();
+      const raw = data?.value || "";
+      const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      if (ids.length) setAdVideos(ids);
+    })();
+  }, []);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -111,7 +126,7 @@ const DailyTasks = () => {
 
     // For watch_ad, open the video modal
     if (taskType === "watch_ad") {
-      setCurrentVideoId(AD_VIDEOS[Math.floor(Math.random() * AD_VIDEOS.length)]);
+      setCurrentVideoId(adVideos[Math.floor(Math.random() * adVideos.length)]);
       setShowVideoAd(true);
       setAdCountdown(30);
       setAdPlaying(false);

@@ -1,14 +1,62 @@
-import { ArrowLeft, MessageCircle, Mail, Phone, ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, MessageCircle, Mail, Phone, ExternalLink, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 const Support = () => {
   const navigate = useNavigate();
+  const [settings, setSettings] = useState({
+    whatsapp_url: "",
+    telegram_url: "",
+    support_email: "support@flexoo.com",
+    support_phone: "+234 800 FLEXOO",
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("key, value")
+        .in("key", ["whatsapp_url", "telegram_url", "support_email", "support_phone"]);
+      const next = { ...settings };
+      (data || []).forEach((row: { key: string; value: string | null }) => {
+        if (row.key in next && row.value) (next as Record<string, string>)[row.key] = row.value;
+      });
+      setSettings(next);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const channels = [
-    { icon: MessageCircle, label: "Live Chat", desc: "Chat with our support team", action: "Start Chat" },
-    { icon: Mail, label: "Email Support", desc: "support@flexoo.com", action: "Send Email" },
-    { icon: Phone, label: "Phone Support", desc: "+234 800 FLEXOO", action: "Call Now" },
+    {
+      icon: MessageCircle,
+      label: "WhatsApp Support",
+      desc: "Chat with our team on WhatsApp",
+      action: "Open Chat",
+      href: settings.whatsapp_url,
+    },
+    {
+      icon: Send,
+      label: "Telegram Support",
+      desc: "Join our Telegram support",
+      action: "Open Telegram",
+      href: settings.telegram_url,
+    },
+    {
+      icon: Mail,
+      label: "Email Support",
+      desc: settings.support_email,
+      action: "Send Email",
+      href: `mailto:${settings.support_email}`,
+    },
+    {
+      icon: Phone,
+      label: "Phone Support",
+      desc: settings.support_phone,
+      action: "Call Now",
+      href: `tel:${settings.support_phone.replace(/\s+/g, "")}`,
+    },
   ];
 
   return (
@@ -27,19 +75,25 @@ const Support = () => {
         </div>
 
         <div className="space-y-2.5">
-          {channels.map(({ icon: Icon, label, desc, action }) => (
-            <div key={label} className="glass-card rounded-xl p-4 flex items-center gap-3">
+          {channels.map(({ icon: Icon, label, desc, action, href }) => (
+            <a
+              key={label}
+              href={href || "#"}
+              target={href?.startsWith("http") ? "_blank" : undefined}
+              rel="noreferrer"
+              className="glass-card rounded-xl p-4 flex items-center gap-3 hover:bg-muted/30 transition-colors"
+            >
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <Icon className="w-4 h-4 text-primary" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-bold text-foreground">{label}</p>
-                <p className="text-[10px] text-muted-foreground">{desc}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{desc}</p>
               </div>
-              <button className="text-[10px] font-semibold text-primary flex items-center gap-1">
+              <span className="text-[10px] font-semibold text-primary flex items-center gap-1 shrink-0">
                 {action} <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
+              </span>
+            </a>
           ))}
         </div>
       </motion.div>
