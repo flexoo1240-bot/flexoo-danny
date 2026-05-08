@@ -72,7 +72,10 @@ interface FpcCode {
   created_at: string;
 }
 
-type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc";
+type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc" | "settings";
+
+const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids"] as const;
+type SettingKey = typeof SETTING_KEYS[number];
 
 const exportToCSV = (rows: Record<string, unknown>[], filename: string) => {
   if (!rows.length) return toast.error("No data to export");
