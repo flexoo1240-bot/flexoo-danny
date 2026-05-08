@@ -198,8 +198,28 @@ const Admin = () => {
     } else if (tab === "fpc") {
       const { data } = await supabase.from("fpc_codes").select("*").order("created_at", { ascending: false });
       setFpcCodes((data as FpcCode[]) || []);
+    } else if (tab === "settings") {
+      const { data } = await supabase.from("app_settings").select("key, value");
+      const next = { ...settings };
+      (data || []).forEach((row: { key: string; value: string | null }) => {
+        if ((SETTING_KEYS as readonly string[]).includes(row.key)) {
+          next[row.key as SettingKey] = row.value ?? "";
+        }
+      });
+      setSettings(next);
     }
     setLoading(false);
+  };
+
+  const handleSaveSetting = async (key: SettingKey) => {
+    setSavingSetting(key);
+    const { error } = await supabase.rpc("admin_update_setting", {
+      p_key: key,
+      p_value: settings[key],
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Setting saved!");
+    setSavingSetting(null);
   };
 
   useEffect(() => { fetchData(); }, [filter, tab]);
