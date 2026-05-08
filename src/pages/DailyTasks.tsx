@@ -58,6 +58,20 @@ const DailyTasks = () => {
     fetchTasks();
   }, [user]);
 
+  // Load admin-configured ad videos
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "ad_video_ids")
+        .maybeSingle();
+      const raw = data?.value || "";
+      const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      if (ids.length) setAdVideos(ids);
+    })();
+  }, []);
+
   // Cleanup interval on unmount
   useEffect(() => {
     return () => {
