@@ -103,6 +103,14 @@ const Admin = () => {
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [fpcCodes, setFpcCodes] = useState<FpcCode[]>([]);
+  const [settings, setSettings] = useState<Record<SettingKey, string>>({
+    whatsapp_url: "",
+    telegram_url: "",
+    support_email: "",
+    support_phone: "",
+    ad_video_ids: "",
+  });
+  const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
   const [fpcSearch, setFpcSearch] = useState("");
   const [showFpcCreate, setShowFpcCreate] = useState(false);
