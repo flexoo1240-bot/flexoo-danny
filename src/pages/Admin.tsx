@@ -435,6 +435,7 @@ const Admin = () => {
     { key: "payments", label: "Payments", icon: <Image className="w-3.5 h-3.5" /> },
     { key: "users", label: "Users", icon: <Users className="w-3.5 h-3.5" /> },
     { key: "fpc", label: "FPC Codes", icon: <Ticket className="w-3.5 h-3.5" /> },
+    { key: "settings", label: "Settings", icon: <SettingsIcon className="w-3.5 h-3.5" /> },
   ];
 
   return (
