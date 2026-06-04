@@ -316,6 +316,7 @@ export type Database = {
         Returns: boolean
       }
       is_current_user_admin: { Args: never; Returns: boolean }
+      lookup_referrer_id: { Args: { p_code: string }; Returns: string }
       process_referral: {
         Args: { new_user_id: string; referrer_code: string }
         Returns: undefined
