@@ -28,6 +28,8 @@ import Admin from "./pages/Admin.tsx";
 import AdminLogin from "./pages/AdminLogin.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import PullToRefresh from "./components/PullToRefresh.tsx";
+import InstallPrompt from "./components/InstallPrompt.tsx";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <PullToRefresh>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/signup" element={<Signup />} />
@@ -64,6 +67,8 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <InstallPrompt />
+          </PullToRefresh>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
