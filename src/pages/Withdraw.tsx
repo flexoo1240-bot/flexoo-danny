@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowDownToLine, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ArrowDownToLine, ShoppingCart, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const container = {
   hidden: { opacity: 0 },
@@ -13,6 +16,44 @@ const item = {
 
 const Withdraw = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [balance, setBalance] = useState<number>(0);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const [{ data: codes }, { data: profile }] = await Promise.all([
+        supabase
+          .from("fpc_codes")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("used", false)
+          .limit(1),
+        supabase
+          .from("profiles")
+          .select("bonus_balance")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+      setHasAccess((codes?.length ?? 0) > 0);
+      setBalance(Number(profile?.bonus_balance ?? 0));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // Auto-forward to the withdrawal form once access is granted.
+  useEffect(() => {
+    if (!loading && hasAccess) {
+      navigate("/withdraw-request", { replace: true });
+    }
+  }, [loading, hasAccess, navigate]);
 
   return (
     <div className="relative min-h-screen bg-background pb-8">
@@ -30,20 +71,6 @@ const Withdraw = () => {
 
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[350px] rounded-full bg-primary/6 blur-[120px]" />
 
-      {/* Floating particles */}
-      {[
-        { top: "12%", left: "8%", delay: "0s", size: "w-1.5 h-1.5" },
-        { top: "55%", right: "15%", delay: "2s", size: "w-1 h-1" },
-        { top: "75%", left: "50%", delay: "3s", size: "w-1.5 h-1.5" },
-        { top: "30%", right: "5%", delay: "1s", size: "w-1 h-1" },
-      ].map((p, i) => (
-        <div
-          key={i}
-          className={`particle absolute ${p.size} rounded-full bg-primary/30`}
-          style={{ top: p.top, left: p.left, right: (p as any).right, animationDelay: p.delay }}
-        />
-      ))}
-
       <motion.div variants={container} initial="hidden" animate="show" className="relative z-10 max-w-md mx-auto px-4 pt-5">
         {/* Header */}
         <motion.div variants={item} className="flex items-center gap-3 mb-8">
@@ -59,38 +86,40 @@ const Withdraw = () => {
           <div>
             <p className="text-[15px] font-bold text-foreground tracking-tight">Withdraw</p>
             <p className="text-xs text-muted-foreground">
-              Balance: <span className="font-bold text-foreground">₦170,000</span>
+              Balance:{" "}
+              <span className="font-bold text-foreground">
+                ₦{balance.toLocaleString()}
+              </span>
             </p>
           </div>
         </motion.div>
 
-        {/* Buy Code Card */}
-        <motion.div
-          variants={item}
-          className="glass-card rounded-2xl p-8 flex flex-col items-center text-center"
-        >
-          <div className="w-16 h-16 rounded-full bg-[#F5C518] flex items-center justify-center mb-5 shadow-lg shadow-[#F5C518]/15">
-            <ShoppingCart className="w-7 h-7 text-background" />
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
           </div>
-          <p className="text-[15px] text-muted-foreground leading-relaxed mb-6">
-            You need to buy a withdrawal code<br />before you can withdraw.
-          </p>
-          <div className="flex gap-3 w-full">
+        ) : (
+          <motion.div
+            variants={item}
+            className="glass-card rounded-2xl p-8 flex flex-col items-center text-center"
+          >
+            <div className="w-16 h-16 rounded-full bg-[#F5C518] flex items-center justify-center mb-5 shadow-lg shadow-[#F5C518]/15">
+              <ShoppingCart className="w-7 h-7 text-background" />
+            </div>
+            <p className="text-[15px] text-foreground font-semibold leading-relaxed mb-6">
+              You need to buy a Withdrawal Code
+              <br />
+              before you can withdraw.
+            </p>
             <button
               onClick={() => navigate("/buy-code")}
-              className="btn-cta h-11 px-6 rounded-xl text-sm flex items-center gap-2 flex-1"
+              className="btn-cta h-12 px-6 rounded-xl text-sm flex items-center justify-center gap-2 w-full"
             >
               <ShoppingCart className="w-4 h-4" />
-              Buy FPC
+              Buy Withdrawal Code
             </button>
-            <button
-              onClick={() => navigate("/withdraw-request")}
-              className="h-11 px-6 rounded-xl text-sm flex items-center gap-2 flex-1 border border-primary/30 text-primary font-semibold hover:bg-primary/10 transition-colors"
-            >
-              Request Withdrawal
-            </button>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );
