@@ -19,6 +19,7 @@ import Support from "./pages/Support.tsx";
 import Channel from "./pages/Channel.tsx";
 import Withdraw from "./pages/Withdraw.tsx";
 import WithdrawRequest from "./pages/WithdrawRequest.tsx";
+import WithdrawalSuccess from "./pages/WithdrawalSuccess.tsx";
 import DailyTasks from "./pages/DailyTasks.tsx";
 import BuyCode from "./pages/BuyCode.tsx";
 import Payment from "./pages/Payment.tsx";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/channel" element={<Channel />} />
             <Route path="/withdraw" element={<ProtectedRoute><Withdraw /></ProtectedRoute>} />
             <Route path="/withdraw-request" element={<ProtectedRoute><WithdrawRequest /></ProtectedRoute>} />
+            <Route path="/withdrawal-success" element={<ProtectedRoute><WithdrawalSuccess /></ProtectedRoute>} />
             <Route path="/daily-tasks" element={<ProtectedRoute><DailyTasks /></ProtectedRoute>} />
             <Route path="/buy-code" element={<ProtectedRoute><BuyCode /></ProtectedRoute>} />
             <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />

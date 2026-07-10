@@ -92,17 +92,21 @@ const WithdrawRequest = () => {
     // Deduct from balance
     await supabase.from("profiles").update({ bonus_balance: balance - amt }).eq("user_id", user.id);
 
-    toast.success("Withdrawal request submitted! Awaiting admin approval.");
+    toast.success("Withdrawal request submitted!");
     setBalance(balance - amt);
-    setAmount("");
-    setBankName("");
-    setAccountNumber("");
-    setAccountName("");
-    setFpcCode("");
     setSubmitting(false);
-
-    const { data } = await supabase.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(10);
-    setPendingRequests(data || []);
+    navigate("/withdrawal-success", {
+      replace: true,
+      state: {
+        id: inserted.id,
+        amount: amt,
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
+        createdAt: new Date().toISOString(),
+      },
+    });
+    return;
   };
 
   const statusColor = (s: string) => s === "pending" ? "text-yellow-400" : s === "approved" ? "text-primary" : "text-destructive";
