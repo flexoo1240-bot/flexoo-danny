@@ -107,6 +107,7 @@ const WithdrawRequest = () => {
       },
     });
     return;
+  };
 
   const statusColor = (s: string) => s === "pending" ? "text-yellow-400" : s === "approved" ? "text-primary" : "text-destructive";
 
