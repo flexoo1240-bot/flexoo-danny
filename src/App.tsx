@@ -58,6 +58,7 @@ const App = () => (
             <Route path="/channel" element={<Channel />} />
             <Route path="/withdraw" element={<ProtectedRoute><Withdraw /></ProtectedRoute>} />
             <Route path="/withdraw-request" element={<ProtectedRoute><WithdrawRequest /></ProtectedRoute>} />
+            <Route path="/withdrawal-success" element={<ProtectedRoute><WithdrawalSuccess /></ProtectedRoute>} />
             <Route path="/daily-tasks" element={<ProtectedRoute><DailyTasks /></ProtectedRoute>} />
             <Route path="/buy-code" element={<ProtectedRoute><BuyCode /></ProtectedRoute>} />
             <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
