@@ -75,15 +75,20 @@ const Payment = () => {
         .from("receipts")
         .getPublicUrl(filePath);
 
-      const { error: insertErr } = await supabase.from("payments").insert({
-        user_id: user.id,
-        amount: 7500,
-        receipt_url: urlData.publicUrl,
-      });
+      const { data: inserted, error: insertErr } = await supabase
+        .from("payments")
+        .insert({
+          user_id: user.id,
+          amount: 7500,
+          receipt_url: urlData.publicUrl,
+        })
+        .select("id")
+        .single();
 
       if (insertErr) throw insertErr;
 
-      setStep("success");
+      navigate(`/payment-review?id=${inserted.id}`, { replace: true });
+      return;
     } catch (err: any) {
       toast.error(err.message || "Failed to submit payment");
     } finally {
