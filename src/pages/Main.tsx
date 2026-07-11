@@ -64,6 +64,44 @@ const Main = () => {
       });
   }, [user]);
 
+  // Auto-redirect to Withdrawal Approved when a newly-approved withdrawal exists
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      const { data } = await supabase
+        .from("withdrawal_requests")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .not("withdrawal_code", "is", null)
+        .order("approved_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (!data?.id) return;
+      let seen: string[] = [];
+      try { seen = JSON.parse(localStorage.getItem("wd_seen") || "[]"); } catch { /* ignore */ }
+      if (!seen.includes(data.id)) {
+        navigate(`/withdrawal-approved?id=${data.id}`, { replace: true });
+      }
+    };
+    check();
+
+    const channel = supabase
+      .channel(`wd-user-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const row: any = payload.new;
+          if (row?.status === "approved" && row?.withdrawal_code) {
+            navigate(`/withdrawal-approved?id=${row.id}`, { replace: true });
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, navigate]);
+
   const referralCode = profile?.referral_code || "Loading...";
   const balanceDisplay = profile ? `₦${profile.bonus_balance.toLocaleString()}` : "₦0";
 
