@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, User, AtSign, Mail, Phone, Lock, Grid3X3, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -29,15 +29,29 @@ const item = {
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const refFromUrl = (searchParams.get("ref") || "").trim().toUpperCase();
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [referralCode, setReferralCode] = useState("");
+  const [referralCode, setReferralCode] = useState(refFromUrl);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Validate ref code exists (best-effort UI hint)
+  useEffect(() => {
+    if (!refFromUrl) return;
+    (async () => {
+      const { data } = await supabase.rpc("lookup_referrer_id", { p_code: refFromUrl });
+      if (!data) {
+        setError(`Referral code "${refFromUrl}" is not valid, but you can still sign up.`);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="relative min-h-screen flex flex-col items-center overflow-hidden bg-background px-4 py-8">
