@@ -270,9 +270,10 @@ const Payment = () => {
 
                 <div className="space-y-2.5 mb-5">
                   {[
-                    { icon: Landmark, label: "BANK", value: "Moniepoint MFB", copyVal: "Moniepoint MFB" },
-                    { icon: CreditCard, label: "ACCOUNT NUMBER", value: "8137498802", copyVal: "8137498802", mono: true },
-                    { icon: User, label: "ACCOUNT NAME", value: "FLEXOO DIGITAL SERVICES", copyVal: "FLEXOO DIGITAL SERVICES" },
+                    { icon: Landmark, label: "BANK", value: account.bank_name, copyVal: account.bank_name },
+                    { icon: CreditCard, label: "ACCOUNT NUMBER", value: account.account_number, copyVal: account.account_number, mono: true },
+                    { icon: User, label: "ACCOUNT NAME", value: account.account_name, copyVal: account.account_name },
+                    { icon: CreditCard, label: "METHOD", value: account.payment_method, copyVal: account.payment_method },
                   ].map(({ icon: Icon, label, value, copyVal, mono }) => (
                     <motion.div
                       key={label}
@@ -301,6 +302,13 @@ const Payment = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                {account.qr_code && (
+                  <div className="flex flex-col items-center gap-2 mb-5">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Scan to Pay</p>
+                    <img src={account.qr_code} alt="Payment QR code" className="w-40 h-40 rounded-xl border border-border object-contain bg-white p-2" />
+                  </div>
+                )}
 
                 <button className="btn-cta w-full h-11 rounded-xl text-sm flex items-center justify-center gap-2 mb-4">
                   <ExternalLink className="w-4 h-4" />
