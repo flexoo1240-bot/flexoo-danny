@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Clock } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 type SuccessState = {
   id?: string;
@@ -63,11 +64,31 @@ const WithdrawalSuccess = () => {
 
   useEffect(() => {
     if (!state.amount) {
-      // no data — send back
       const t = setTimeout(() => navigate("/main", { replace: true }), 100);
       return () => clearTimeout(t);
     }
   }, [state.amount, navigate]);
+
+  // Realtime: when this withdrawal gets approved, redirect to the approved page
+  useEffect(() => {
+    if (!state.id) return;
+    const channel = supabase
+      .channel(`wd-${state.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "withdrawal_requests", filter: `id=eq.${state.id}` },
+        (payload) => {
+          const row: any = payload.new;
+          if (row?.status === "approved") {
+            navigate(`/withdrawal-approved?id=${state.id}`, { replace: true });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [state.id, navigate]);
 
   const createdAt = state.createdAt ? new Date(state.createdAt) : now;
   const referenceId = (state.id || `WDR-${Math.random().toString(36).slice(2, 10)}`).toUpperCase();

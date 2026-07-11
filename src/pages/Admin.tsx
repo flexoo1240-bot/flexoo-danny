@@ -452,7 +452,10 @@ const Admin = () => {
             <h1 className="text-sm font-bold text-foreground">Admin Panel</h1>
             <p className="text-[10px] text-muted-foreground">Manage requests, payments & users</p>
           </div>
-          <button onClick={fetchData} className="ml-auto glass-card w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted/30">
+          <button onClick={() => navigate("/admin/payment-settings")} title="Payment Settings" className="ml-auto glass-card px-2.5 h-8 rounded-lg flex items-center gap-1 text-[10px] font-bold text-primary hover:bg-primary/10">
+            <CreditCard className="w-3.5 h-3.5" /> Payments
+          </button>
+          <button onClick={fetchData} className="glass-card w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted/30">
             <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
           </button>
         </div>

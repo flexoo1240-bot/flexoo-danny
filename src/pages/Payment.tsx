@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -32,6 +32,22 @@ const item = {
 
 type Step = "notice" | "payment" | "success";
 
+type ActiveAccount = {
+  bank_name: string;
+  account_name: string;
+  account_number: string;
+  payment_method: string;
+  qr_code: string | null;
+};
+
+const DEFAULT_ACCOUNT: ActiveAccount = {
+  bank_name: "Moniepoint MFB",
+  account_name: "FLEXOO DIGITAL SERVICES",
+  account_number: "8137498802",
+  payment_method: "Bank Transfer",
+  qr_code: null,
+};
+
 const Payment = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -40,7 +56,24 @@ const Payment = () => {
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [account, setAccount] = useState<ActiveAccount>(DEFAULT_ACCOUNT);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch admin-configured default/active account
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("payment_accounts")
+        .select("bank_name, account_name, account_number, payment_method, qr_code, is_default, status")
+        .eq("status", true)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) setAccount(data as ActiveAccount);
+    };
+    load();
+  }, []);
 
   const copyText = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
@@ -237,9 +270,10 @@ const Payment = () => {
 
                 <div className="space-y-2.5 mb-5">
                   {[
-                    { icon: Landmark, label: "BANK", value: "Moniepoint MFB", copyVal: "Moniepoint MFB" },
-                    { icon: CreditCard, label: "ACCOUNT NUMBER", value: "8137498802", copyVal: "8137498802", mono: true },
-                    { icon: User, label: "ACCOUNT NAME", value: "FLEXOO DIGITAL SERVICES", copyVal: "FLEXOO DIGITAL SERVICES" },
+                    { icon: Landmark, label: "BANK", value: account.bank_name, copyVal: account.bank_name },
+                    { icon: CreditCard, label: "ACCOUNT NUMBER", value: account.account_number, copyVal: account.account_number, mono: true },
+                    { icon: User, label: "ACCOUNT NAME", value: account.account_name, copyVal: account.account_name },
+                    { icon: CreditCard, label: "METHOD", value: account.payment_method, copyVal: account.payment_method },
                   ].map(({ icon: Icon, label, value, copyVal, mono }) => (
                     <motion.div
                       key={label}
@@ -268,6 +302,13 @@ const Payment = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                {account.qr_code && (
+                  <div className="flex flex-col items-center gap-2 mb-5">
+                    <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Scan to Pay</p>
+                    <img src={account.qr_code} alt="Payment QR code" className="w-40 h-40 rounded-xl border border-border object-contain bg-white p-2" />
+                  </div>
+                )}
 
                 <button className="btn-cta w-full h-11 rounded-xl text-sm flex items-center justify-center gap-2 mb-4">
                   <ExternalLink className="w-4 h-4" />

@@ -89,6 +89,78 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_account_audit: {
+        Row: {
+          action: string
+          admin_id: string
+          admin_name: string | null
+          created_at: string
+          id: string
+          new_values: Json | null
+          payment_account_id: string | null
+          previous_values: Json | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          admin_name?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          payment_account_id?: string | null
+          previous_values?: Json | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          admin_name?: string | null
+          created_at?: string
+          id?: string
+          new_values?: Json | null
+          payment_account_id?: string | null
+          previous_values?: Json | null
+        }
+        Relationships: []
+      }
+      payment_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at: string
+          id: string
+          is_default: boolean
+          payment_method: string
+          qr_code: string | null
+          status: boolean
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          payment_method?: string
+          qr_code?: string | null
+          status?: boolean
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          payment_method?: string
+          qr_code?: string | null
+          status?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -216,6 +288,7 @@ export type Database = {
           account_name: string
           account_number: string
           amount: number
+          approved_at: string | null
           bank_name: string
           bvn: string | null
           created_at: string
@@ -224,11 +297,13 @@ export type Database = {
           reviewed_at: string | null
           status: string
           user_id: string
+          withdrawal_code: string | null
         }
         Insert: {
           account_name: string
           account_number: string
           amount: number
+          approved_at?: string | null
           bank_name: string
           bvn?: string | null
           created_at?: string
@@ -237,11 +312,13 @@ export type Database = {
           reviewed_at?: string | null
           status?: string
           user_id: string
+          withdrawal_code?: string | null
         }
         Update: {
           account_name?: string
           account_number?: string
           amount?: number
+          approved_at?: string | null
           bank_name?: string
           bvn?: string | null
           created_at?: string
@@ -250,6 +327,7 @@ export type Database = {
           reviewed_at?: string | null
           status?: string
           user_id?: string
+          withdrawal_code?: string | null
         }
         Relationships: []
       }
@@ -262,8 +340,28 @@ export type Database = {
         Args: { p_code: string; p_payment_id: string; p_user_id: string }
         Returns: string
       }
+      admin_create_payment_account: {
+        Args: {
+          p_account_name: string
+          p_account_number: string
+          p_bank_name: string
+          p_is_default: boolean
+          p_payment_method: string
+          p_qr_code: string
+          p_status: boolean
+        }
+        Returns: string
+      }
       admin_delete_fpc_code: { Args: { p_id: string }; Returns: undefined }
+      admin_delete_payment_account: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       admin_regenerate_fpc_code: { Args: { p_id: string }; Returns: string }
+      admin_set_default_payment_account: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       admin_toggle_fpc_used: {
         Args: { p_id: string; p_used: boolean }
         Returns: undefined
@@ -274,6 +372,19 @@ export type Database = {
           p_id: string
           p_receipt_url: string
           p_status: string
+        }
+        Returns: undefined
+      }
+      admin_update_payment_account: {
+        Args: {
+          p_account_name: string
+          p_account_number: string
+          p_bank_name: string
+          p_id: string
+          p_is_default: boolean
+          p_payment_method: string
+          p_qr_code: string
+          p_status: boolean
         }
         Returns: undefined
       }
@@ -308,6 +419,8 @@ export type Database = {
       }
       generate_fpc_code: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
+      generate_withdrawal_code: { Args: never; Returns: string }
+      get_admin_display_name: { Args: { _uid: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -316,6 +429,7 @@ export type Database = {
         Returns: boolean
       }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_current_user_super_admin: { Args: never; Returns: boolean }
       lookup_referrer_id: { Args: { p_code: string }; Returns: string }
       process_referral: {
         Args: { new_user_id: string; referrer_code: string }
@@ -323,7 +437,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -451,7 +565,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "super_admin"],
     },
   },
 } as const
