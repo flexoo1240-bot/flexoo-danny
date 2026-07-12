@@ -63,6 +63,11 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -70,6 +75,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.01em;
+    overscroll-behavior-x: none;
+  }
+
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  p, h1, h2, h3, h4, h5, h6, span, a {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   /* Better font rendering for headings */
