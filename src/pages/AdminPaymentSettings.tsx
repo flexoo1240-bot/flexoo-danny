@@ -177,8 +177,8 @@ const AdminPaymentSettings = () => {
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="glass-card rounded-2xl p-8 text-center max-w-sm w-full">
           <Lock className="w-12 h-12 text-destructive mx-auto mb-4" />
-          <h1 className="text-lg font-bold text-foreground mb-2">Super Admin Only</h1>
-          <p className="text-sm text-muted-foreground mb-6">You need the super_admin role to manage payment accounts.</p>
+          <h1 className="text-lg font-bold text-foreground mb-2">Admins Only</h1>
+          <p className="text-sm text-muted-foreground mb-6">You need an admin role to manage payment accounts.</p>
           <button onClick={() => navigate("/admin")} className="btn-cta w-full h-10 rounded-xl text-sm font-bold">Back to Admin</button>
         </div>
       </div>
