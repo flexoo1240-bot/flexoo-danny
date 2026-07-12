@@ -23,6 +23,7 @@ import WithdrawalSuccess from "./pages/WithdrawalSuccess.tsx";
 import WithdrawalApproved from "./pages/WithdrawalApproved.tsx";
 import AdminPaymentSettings from "./pages/AdminPaymentSettings.tsx";
 import AdminReferrals from "./pages/AdminReferrals.tsx";
+import ReferralHistory from "./pages/ReferralHistory.tsx";
 import DailyTasks from "./pages/DailyTasks.tsx";
 import BuyCode from "./pages/BuyCode.tsx";
 import Payment from "./pages/Payment.tsx";
