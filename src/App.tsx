@@ -67,6 +67,7 @@ const App = () => (
             <Route path="/withdrawal-approved" element={<ProtectedRoute><WithdrawalApproved /></ProtectedRoute>} />
             <Route path="/admin/payment-settings" element={<ProtectedRoute><AdminPaymentSettings /></ProtectedRoute>} />
             <Route path="/admin/referrals" element={<ProtectedRoute><AdminReferrals /></ProtectedRoute>} />
+            <Route path="/referrals" element={<ProtectedRoute><ReferralHistory /></ProtectedRoute>} />
             <Route path="/daily-tasks" element={<ProtectedRoute><DailyTasks /></ProtectedRoute>} />
             <Route path="/buy-code" element={<ProtectedRoute><BuyCode /></ProtectedRoute>} />
             <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
