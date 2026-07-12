@@ -244,6 +244,51 @@ export type Database = {
           },
         ]
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referee_profile_id: string
+          referee_user_id: string
+          referrer_profile_id: string
+          reward_amount: number
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referee_profile_id: string
+          referee_user_id: string
+          referrer_profile_id: string
+          reward_amount?: number
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referee_profile_id?: string
+          referee_user_id?: string
+          referrer_profile_id?: string
+          reward_amount?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referee_profile_id_fkey"
+            columns: ["referee_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_profile_id_fkey"
+            columns: ["referrer_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       spin_history: {
         Row: {
           amount: number
@@ -261,6 +306,36 @@ export type Database = {
           amount?: number
           id?: string
           spun_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          type?: string
           user_id?: string
         }
         Relationships: []
