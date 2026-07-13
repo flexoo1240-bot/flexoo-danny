@@ -32,6 +32,48 @@ export type Database = {
         }
         Relationships: []
       }
+      community_channels: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          icon: string | null
+          id: string
+          member_count: string | null
+          name: string
+          platform: string
+          status: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          member_count?: string | null
+          name: string
+          platform?: string
+          status?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          icon?: string | null
+          id?: string
+          member_count?: string | null
+          name?: string
+          platform?: string
+          status?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       daily_tasks: {
         Row: {
           completed_at: string
