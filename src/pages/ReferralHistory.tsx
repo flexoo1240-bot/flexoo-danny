@@ -180,8 +180,61 @@ const ReferralHistory = () => {
             ))}
           </div>
         )}
+
+        {/* Referral Reward Transactions */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Receipt className="w-4 h-4 text-primary" />
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Reward Transactions</h2>
+          </div>
+          {txns.length === 0 ? (
+            <div className="glass-card rounded-xl p-4 text-center text-xs text-muted-foreground">
+              No referral reward transactions yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {txns.map((t) => {
+                const refId = t.metadata?.referral_id as string | undefined;
+                const refeeId = t.metadata?.referee_user_id as string | undefined;
+                return (
+                  <div key={t.id} className="glass-card rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {t.description || "Referral bonus"}
+                        </p>
+                        {refeeId && (
+                          <p className="text-[10px] text-muted-foreground font-mono-app truncate">
+                            Referee: {refeeId.slice(0, 8)}…
+                          </p>
+                        )}
+                        {refId && (
+                          <p className="text-[10px] text-muted-foreground font-mono-app truncate">
+                            Ref: {refId.slice(0, 8)}…
+                          </p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(t.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold text-primary">
+                          +₦{Number(t.amount).toLocaleString()}
+                        </p>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-primary/10 text-primary">
+                          Credited
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+
   );
 };
 
