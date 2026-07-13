@@ -23,6 +23,7 @@ import WithdrawalSuccess from "./pages/WithdrawalSuccess.tsx";
 import WithdrawalApproved from "./pages/WithdrawalApproved.tsx";
 import AdminPaymentSettings from "./pages/AdminPaymentSettings.tsx";
 import AdminReferrals from "./pages/AdminReferrals.tsx";
+import AdminCommunityChannels from "./pages/AdminCommunityChannels.tsx";
 import ReferralHistory from "./pages/ReferralHistory.tsx";
 import DailyTasks from "./pages/DailyTasks.tsx";
 import BuyCode from "./pages/BuyCode.tsx";
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/withdrawal-approved" element={<ProtectedRoute><WithdrawalApproved /></ProtectedRoute>} />
             <Route path="/admin/payment-settings" element={<ProtectedRoute><AdminPaymentSettings /></ProtectedRoute>} />
             <Route path="/admin/referrals" element={<ProtectedRoute><AdminReferrals /></ProtectedRoute>} />
+            <Route path="/admin/community-channels" element={<ProtectedRoute><AdminCommunityChannels /></ProtectedRoute>} />
             <Route path="/referrals" element={<ProtectedRoute><ReferralHistory /></ProtectedRoute>} />
             <Route path="/daily-tasks" element={<ProtectedRoute><DailyTasks /></ProtectedRoute>} />
             <Route path="/buy-code" element={<ProtectedRoute><BuyCode /></ProtectedRoute>} />

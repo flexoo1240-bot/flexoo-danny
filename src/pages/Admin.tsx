@@ -455,6 +455,9 @@ const Admin = () => {
           <button onClick={() => navigate("/admin/payment-settings")} title="Payment Settings" className="ml-auto glass-card px-2.5 h-8 rounded-lg flex items-center gap-1 text-[10px] font-bold text-primary hover:bg-primary/10">
             <CreditCard className="w-3.5 h-3.5" /> Payments
           </button>
+          <button onClick={() => navigate("/admin/community-channels")} title="Community Channels" className="glass-card px-2.5 h-8 rounded-lg flex items-center gap-1 text-[10px] font-bold text-primary hover:bg-primary/10">
+            Channels
+          </button>
           <button onClick={fetchData} className="glass-card w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted/30">
             <RefreshCw className={`w-3.5 h-3.5 text-muted-foreground ${loading ? "animate-spin" : ""}`} />
           </button>
