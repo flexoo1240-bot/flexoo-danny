@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Users, Wallet } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+interface Txn {
+  id: string;
+  amount: number;
+  description: string | null;
+  created_at: string;
+  metadata: any;
+}
+
 
 interface Row {
   id: string;
