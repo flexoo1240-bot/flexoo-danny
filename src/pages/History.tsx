@@ -23,7 +23,7 @@ const History = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: spins }, { data: tasks }, { data: withdrawals }, { data: payments }, { data: txns }] = await Promise.all([
+      const [{ data: spins }, { data: tasks }, { data: withdrawals }, { data: payments }, { data: rewardTxns }] = await Promise.all([
         supabase.from("spin_history").select("*").eq("user_id", user.id).order("spun_at", { ascending: false }),
         supabase.from("daily_tasks").select("*").eq("user_id", user.id).order("completed_at", { ascending: false }),
         supabase.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
@@ -32,10 +32,10 @@ const History = () => {
       ]);
 
       // Enrich referral rewards with referee username
-      const refereeIds = (txns || [])
-        .filter((t: { type: string; metadata: Record<string, unknown> | null }) => t.type === "referral_reward")
+      const refereeIds = ((rewardTxns || []) as Array<{ type: string; metadata: unknown }>)
+        .filter((t) => t.type === "referral_reward")
         .map((t) => (t.metadata as { referee_user_id?: string } | null)?.referee_user_id)
-        .filter(Boolean) as string[];
+        .filter((v): v is string => Boolean(v));
       let refereeMap: Record<string, string> = {};
       if (refereeIds.length) {
         const { data: profs } = await supabase
