@@ -114,6 +114,20 @@ const History = () => {
         });
       });
 
+      (rewardTxns || []).forEach((t: { type: string; amount: number; created_at: string; metadata: unknown; description: string }) => {
+        if (t.type !== "referral_reward") return;
+        const d = new Date(t.created_at);
+        const meta = (t.metadata as { referee_user_id?: string } | null) || {};
+        const name = meta.referee_user_id ? refereeMap[meta.referee_user_id] : null;
+        txns.push({
+          type: "credit",
+          label: name ? `Referral Reward · @${name}` : "Referral Reward",
+          amount: `+₦${Number(t.amount).toLocaleString()}`,
+          date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+        });
+      });
+
       // Sort by date descending
       txns.sort((a, b) => new Date(b.date + " " + b.time).getTime() - new Date(a.date + " " + a.time).getTime());
 
