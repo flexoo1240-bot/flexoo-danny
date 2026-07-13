@@ -23,12 +23,32 @@ const History = () => {
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      const [{ data: spins }, { data: tasks }, { data: withdrawals }, { data: payments }] = await Promise.all([
+      const [{ data: spins }, { data: tasks }, { data: withdrawals }, { data: payments }, { data: rewardTxns }] = await Promise.all([
         supabase.from("spin_history").select("*").eq("user_id", user.id).order("spun_at", { ascending: false }),
         supabase.from("daily_tasks").select("*").eq("user_id", user.id).order("completed_at", { ascending: false }),
         supabase.from("withdrawal_requests").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("payments").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
       ]);
+
+      // Enrich referral rewards with referee username
+      const refereeIds = ((rewardTxns || []) as Array<{ type: string; metadata: unknown }>)
+        .filter((t) => t.type === "referral_reward")
+        .map((t) => (t.metadata as { referee_user_id?: string } | null)?.referee_user_id)
+        .filter((v): v is string => Boolean(v));
+      let refereeMap: Record<string, string> = {};
+      if (refereeIds.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, username, full_name")
+          .in("user_id", refereeIds);
+        refereeMap = Object.fromEntries(
+          (profs || []).map((p: { user_id: string; username: string | null; full_name: string | null }) => [
+            p.user_id,
+            p.username || p.full_name || p.user_id.slice(0, 8),
+          ])
+        );
+      }
 
       const txns: Transaction[] = [];
 
@@ -91,6 +111,20 @@ const History = () => {
           date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
           time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
           linkTo: "/payment-receipt",
+        });
+      });
+
+      (rewardTxns || []).forEach((t: { type: string; amount: number; created_at: string; metadata: unknown; description: string }) => {
+        if (t.type !== "referral_reward") return;
+        const d = new Date(t.created_at);
+        const meta = (t.metadata as { referee_user_id?: string } | null) || {};
+        const name = meta.referee_user_id ? refereeMap[meta.referee_user_id] : null;
+        txns.push({
+          type: "credit",
+          label: name ? `Referral Reward · @${name}` : "Referral Reward",
+          amount: `+₦${Number(t.amount).toLocaleString()}`,
+          date: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+          time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
         });
       });
 
