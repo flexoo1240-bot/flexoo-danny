@@ -178,9 +178,10 @@ const Main = () => {
 
   const stats = [
     { icon: Sparkles, label: "TOTAL EARNED", value: balanceDisplay },
-    { icon: Users, label: "REFERRALS", value: "0" },
-    { icon: Sparkles, label: "REF EARNED", value: "₦0" },
+    { icon: Users, label: "REFERRALS", value: refCount.toLocaleString() },
+    { icon: Sparkles, label: "REF EARNED", value: `₦${refEarned.toLocaleString()}` },
   ];
+
 
   return (
     <div className="relative min-h-screen bg-background pb-10">
