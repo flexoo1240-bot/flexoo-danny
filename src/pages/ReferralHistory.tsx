@@ -28,8 +28,20 @@ const ReferralHistory = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [txns, setTxns] = useState<Txn[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEarned, setTotalEarned] = useState(0);
+
+  const loadTxns = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("transactions")
+      .select("id, amount, description, created_at, metadata")
+      .eq("user_id", user.id)
+      .eq("type", "referral_reward")
+      .order("created_at", { ascending: false });
+    setTxns((data ?? []) as Txn[]);
+  };
 
   const load = async () => {
     if (!user) return;
@@ -64,30 +76,39 @@ const ReferralHistory = () => {
     const withNames = (data ?? []).map((r: any) => ({ ...r, referee: map.get(r.referee_profile_id) }));
     setRows(withNames);
     setTotalEarned(withNames.reduce((s, r) => s + Number(r.reward_amount || 0), 0));
+    await loadTxns();
     setLoading(false);
     return prof.id;
   };
 
   useEffect(() => {
-    let channel: any;
+    let refChan: any, txnChan: any;
     (async () => {
       const profileId = await load();
-      if (!profileId) return;
-      channel = supabase
+      if (!profileId || !user) return;
+      refChan = supabase
         .channel("referral-history")
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "referrals", filter: `referrer_profile_id=eq.${profileId}` },
-          () => {
-            load();
-          }
+          () => { load(); }
+        )
+        .subscribe();
+      txnChan = supabase
+        .channel("referral-txns")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
+          () => { loadTxns(); }
         )
         .subscribe();
     })();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      if (refChan) supabase.removeChannel(refChan);
+      if (txnChan) supabase.removeChannel(txnChan);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id]);
 
   if (loading) {
