@@ -50,19 +50,68 @@ const Main = () => {
   const [copied, setCopied] = useState(false);
   const [showBalance, setShowBalance] = useState(true);
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [profile, setProfile] = useState<{ referral_code: string; bonus_balance: number; full_name: string; username: string } | null>(null);
+  const [profile, setProfile] = useState<{ id: string; referral_code: string; bonus_balance: number; full_name: string; username: string } | null>(null);
+  const [refCount, setRefCount] = useState(0);
+  const [refEarned, setRefEarned] = useState(0);
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("referral_code, bonus_balance, full_name, username")
-      .eq("user_id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) setProfile(data);
-      });
+    let profileId: string | null = null;
+
+    const loadProfile = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, referral_code, bonus_balance, full_name, username")
+        .eq("user_id", user.id)
+        .single();
+      if (data) {
+        setProfile(data);
+        profileId = data.id;
+        loadReferrals(data.id);
+        subscribeAll(data.id);
+      }
+    };
+
+    const loadReferrals = async (pid: string) => {
+      const { data } = await supabase
+        .from("referrals")
+        .select("reward_amount")
+        .eq("referrer_profile_id", pid);
+      const rows = data ?? [];
+      setRefCount(rows.length);
+      setRefEarned(rows.reduce((s, r: any) => s + Number(r.reward_amount || 0), 0));
+    };
+
+    let profileChan: any, refChan: any;
+    const subscribeAll = (pid: string) => {
+      profileChan = supabase
+        .channel(`profile-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            const row: any = payload.new;
+            setProfile((p) => (p ? { ...p, bonus_balance: row.bonus_balance, full_name: row.full_name, username: row.username } : p));
+          }
+        )
+        .subscribe();
+      refChan = supabase
+        .channel(`refs-${pid}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "referrals", filter: `referrer_profile_id=eq.${pid}` },
+          () => loadReferrals(pid)
+        )
+        .subscribe();
+    };
+
+    loadProfile();
+    return () => {
+      if (profileChan) supabase.removeChannel(profileChan);
+      if (refChan) supabase.removeChannel(refChan);
+    };
   }, [user]);
+
 
   // Auto-redirect to Withdrawal Approved when a newly-approved withdrawal exists
   useEffect(() => {
@@ -129,9 +178,10 @@ const Main = () => {
 
   const stats = [
     { icon: Sparkles, label: "TOTAL EARNED", value: balanceDisplay },
-    { icon: Users, label: "REFERRALS", value: "0" },
-    { icon: Sparkles, label: "REF EARNED", value: "₦0" },
+    { icon: Users, label: "REFERRALS", value: refCount.toLocaleString() },
+    { icon: Sparkles, label: "REF EARNED", value: `₦${refEarned.toLocaleString()}` },
   ];
+
 
   return (
     <div className="relative min-h-screen bg-background pb-10">

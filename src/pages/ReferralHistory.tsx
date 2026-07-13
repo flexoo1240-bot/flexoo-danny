@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Users, Wallet } from "lucide-react";
+import { ArrowLeft, Users, Wallet, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+interface Txn {
+  id: string;
+  amount: number;
+  description: string | null;
+  created_at: string;
+  metadata: any;
+}
+
 
 interface Row {
   id: string;
@@ -19,8 +28,20 @@ const ReferralHistory = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [txns, setTxns] = useState<Txn[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalEarned, setTotalEarned] = useState(0);
+
+  const loadTxns = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("transactions")
+      .select("id, amount, description, created_at, metadata")
+      .eq("user_id", user.id)
+      .eq("type", "referral_reward")
+      .order("created_at", { ascending: false });
+    setTxns((data ?? []) as Txn[]);
+  };
 
   const load = async () => {
     if (!user) return;
@@ -55,30 +76,39 @@ const ReferralHistory = () => {
     const withNames = (data ?? []).map((r: any) => ({ ...r, referee: map.get(r.referee_profile_id) }));
     setRows(withNames);
     setTotalEarned(withNames.reduce((s, r) => s + Number(r.reward_amount || 0), 0));
+    await loadTxns();
     setLoading(false);
     return prof.id;
   };
 
   useEffect(() => {
-    let channel: any;
+    let refChan: any, txnChan: any;
     (async () => {
       const profileId = await load();
-      if (!profileId) return;
-      channel = supabase
+      if (!profileId || !user) return;
+      refChan = supabase
         .channel("referral-history")
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "referrals", filter: `referrer_profile_id=eq.${profileId}` },
-          () => {
-            load();
-          }
+          () => { load(); }
+        )
+        .subscribe();
+      txnChan = supabase
+        .channel("referral-txns")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
+          () => { loadTxns(); }
         )
         .subscribe();
     })();
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      if (refChan) supabase.removeChannel(refChan);
+      if (txnChan) supabase.removeChannel(txnChan);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [user?.id]);
 
   if (loading) {
@@ -150,8 +180,61 @@ const ReferralHistory = () => {
             ))}
           </div>
         )}
+
+        {/* Referral Reward Transactions */}
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Receipt className="w-4 h-4 text-primary" />
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Reward Transactions</h2>
+          </div>
+          {txns.length === 0 ? (
+            <div className="glass-card rounded-xl p-4 text-center text-xs text-muted-foreground">
+              No referral reward transactions yet.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {txns.map((t) => {
+                const refId = t.metadata?.referral_id as string | undefined;
+                const refeeId = t.metadata?.referee_user_id as string | undefined;
+                return (
+                  <div key={t.id} className="glass-card rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {t.description || "Referral bonus"}
+                        </p>
+                        {refeeId && (
+                          <p className="text-[10px] text-muted-foreground font-mono-app truncate">
+                            Referee: {refeeId.slice(0, 8)}…
+                          </p>
+                        )}
+                        {refId && (
+                          <p className="text-[10px] text-muted-foreground font-mono-app truncate">
+                            Ref: {refId.slice(0, 8)}…
+                          </p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(t.created_at).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold text-primary">
+                          +₦{Number(t.amount).toLocaleString()}
+                        </p>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-primary/10 text-primary">
+                          Credited
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+
   );
 };
 
