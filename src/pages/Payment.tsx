@@ -268,12 +268,12 @@ const Payment = () => {
                   </p>
                   <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
                     <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    ₦7,500
+                    {priceLabel}
                   </span>
                 </div>
 
                 <p className="text-[13px] text-muted-foreground mb-5">
-                  Transfer <span className="font-semibold text-foreground">₦7,500</span> to the account below:
+                  Transfer <span className="font-semibold text-foreground">{priceLabel}</span> to the account below:
                 </p>
 
                 <div className="space-y-2.5 mb-5">
