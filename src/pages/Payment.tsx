@@ -57,20 +57,28 @@ const Payment = () => {
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [account, setAccount] = useState<ActiveAccount>(DEFAULT_ACCOUNT);
+  const [price, setPrice] = useState<number>(7500);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch admin-configured default/active account
+  const priceLabel = `₦${price.toLocaleString()}`;
+
+  // Fetch admin-configured default/active account + price
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("payment_accounts")
-        .select("bank_name, account_name, account_number, payment_method, qr_code, is_default, status")
-        .eq("status", true)
-        .order("is_default", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) setAccount(data as ActiveAccount);
+      const [{ data: acc }, { data: setting }] = await Promise.all([
+        supabase
+          .from("payment_accounts")
+          .select("bank_name, account_name, account_number, payment_method, qr_code, is_default, status")
+          .eq("status", true)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase.from("app_settings").select("value").eq("key", "withdrawal_code_price").maybeSingle(),
+      ]);
+      if (acc) setAccount(acc as ActiveAccount);
+      const p = Number(setting?.value);
+      if (Number.isFinite(p) && p > 0) setPrice(p);
     };
     load();
   }, []);
