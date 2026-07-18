@@ -229,12 +229,21 @@ const Admin = () => {
   // admin role server-side. Direct table writes are no longer used.
 
   const handleWithdrawalAction = async (id: string, action: "approved" | "rejected") => {
+    let reason: string | null = null;
+    if (action === "rejected") {
+      reason = window.prompt("Reason for rejecting this withdrawal? (shown to user)") || "";
+      if (!reason.trim()) {
+        toast.error("A rejection reason is required");
+        return;
+      }
+    }
     setProcessing(id);
     const { error } = await supabase.rpc("admin_update_withdrawal", {
       withdrawal_id: id,
       new_status: action,
       admin_user_id: user?.id || "",
-    });
+      reason,
+    } as any);
     if (error) toast.error(error.message || "Failed to process request");
     else toast.success(`Request ${action}!`);
     setProcessing(null);
