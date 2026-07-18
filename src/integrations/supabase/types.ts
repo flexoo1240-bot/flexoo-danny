@@ -411,6 +411,7 @@ export type Database = {
           created_at: string
           fpc_code: string | null
           id: string
+          rejection_reason: string | null
           reviewed_at: string | null
           status: string
           user_id: string
@@ -426,6 +427,7 @@ export type Database = {
           created_at?: string
           fpc_code?: string | null
           id?: string
+          rejection_reason?: string | null
           reviewed_at?: string | null
           status?: string
           user_id: string
@@ -441,6 +443,7 @@ export type Database = {
           created_at?: string
           fpc_code?: string | null
           id?: string
+          rejection_reason?: string | null
           reviewed_at?: string | null
           status?: string
           user_id?: string
@@ -517,14 +520,24 @@ export type Database = {
         Args: { p_balance: number; p_level: string; p_profile_id: string }
         Returns: undefined
       }
-      admin_update_withdrawal: {
-        Args: {
-          admin_user_id: string
-          new_status: string
-          withdrawal_id: string
-        }
-        Returns: undefined
-      }
+      admin_update_withdrawal:
+        | {
+            Args: {
+              admin_user_id: string
+              new_status: string
+              withdrawal_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              admin_user_id: string
+              new_status: string
+              reason?: string
+              withdrawal_id: string
+            }
+            Returns: undefined
+          }
       admin_update_withdrawal_account: {
         Args: {
           p_account_name: string
