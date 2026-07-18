@@ -120,7 +120,7 @@ const Payment = () => {
         .from("payments")
         .insert({
           user_id: user.id,
-          amount: 7500,
+          amount: price,
           receipt_url: urlData.publicUrl,
         })
         .select("id")
