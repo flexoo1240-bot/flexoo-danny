@@ -109,6 +109,7 @@ const Admin = () => {
     support_email: "",
     support_phone: "",
     ad_video_ids: "",
+    withdrawal_code_price: "",
   });
   const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
