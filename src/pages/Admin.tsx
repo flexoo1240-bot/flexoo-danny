@@ -74,7 +74,7 @@ interface FpcCode {
 
 type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc" | "settings";
 
-const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids"] as const;
+const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids", "withdrawal_code_price"] as const;
 type SettingKey = typeof SETTING_KEYS[number];
 
 const exportToCSV = (rows: Record<string, unknown>[], filename: string) => {
@@ -109,6 +109,7 @@ const Admin = () => {
     support_email: "",
     support_phone: "",
     ad_video_ids: "",
+    withdrawal_code_price: "",
   });
   const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
@@ -228,12 +229,21 @@ const Admin = () => {
   // admin role server-side. Direct table writes are no longer used.
 
   const handleWithdrawalAction = async (id: string, action: "approved" | "rejected") => {
+    let reason: string | null = null;
+    if (action === "rejected") {
+      reason = window.prompt("Reason for rejecting this withdrawal? (shown to user)") || "";
+      if (!reason.trim()) {
+        toast.error("A rejection reason is required");
+        return;
+      }
+    }
     setProcessing(id);
     const { error } = await supabase.rpc("admin_update_withdrawal", {
       withdrawal_id: id,
       new_status: action,
       admin_user_id: user?.id || "",
-    });
+      reason,
+    } as any);
     if (error) toast.error(error.message || "Failed to process request");
     else toast.success(`Request ${action}!`);
     setProcessing(null);
@@ -1108,6 +1118,7 @@ const Admin = () => {
                 { key: "support_email" as SettingKey, label: "Support Email", icon: Mail, placeholder: "support@flexoo.com" },
                 { key: "support_phone" as SettingKey, label: "Support Phone", icon: Phone, placeholder: "+234 800 0000" },
                 { key: "ad_video_ids" as SettingKey, label: "Ad Video YouTube IDs (comma-separated)", icon: Video, placeholder: "dQw4w9WgXcQ,9bZkp7q19f0" },
+                { key: "withdrawal_code_price" as SettingKey, label: "Withdrawal Code Price (₦)", icon: CreditCard, placeholder: "7500" },
               ]).map(({ key, label, icon: Icon, placeholder }) => (
                 <div key={key} className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ShoppingCart, Zap, ArrowRight, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const container = {
   hidden: { opacity: 0 },
@@ -15,8 +16,18 @@ const item = {
 const BuyCode = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [price, setPrice] = useState<number>(7500);
 
   useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "withdrawal_code_price")
+      .maybeSingle()
+      .then(({ data }) => {
+        const p = Number(data?.value);
+        if (Number.isFinite(p) && p > 0) setPrice(p);
+      });
     const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
@@ -128,7 +139,7 @@ const BuyCode = () => {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-1.5">
                   Code Price
                 </p>
-                <p className="text-4xl font-extrabold text-primary mb-3 tracking-tight">₦7,500</p>
+                <p className="text-4xl font-extrabold text-primary mb-3 tracking-tight">₦{price.toLocaleString()}</p>
                 <p className="text-[13px] text-muted-foreground leading-relaxed">
                   Purchase a withdrawal code to unlock fund<br />withdrawals from your wallet.
                 </p>
