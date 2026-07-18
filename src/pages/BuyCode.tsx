@@ -139,7 +139,7 @@ const BuyCode = () => {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-1.5">
                   Code Price
                 </p>
-                <p className="text-4xl font-extrabold text-primary mb-3 tracking-tight">₦7,500</p>
+                <p className="text-4xl font-extrabold text-primary mb-3 tracking-tight">₦{price.toLocaleString()}</p>
                 <p className="text-[13px] text-muted-foreground leading-relaxed">
                   Purchase a withdrawal code to unlock fund<br />withdrawals from your wallet.
                 </p>
