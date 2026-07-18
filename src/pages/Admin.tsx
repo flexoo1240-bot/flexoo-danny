@@ -1109,6 +1109,7 @@ const Admin = () => {
                 { key: "support_email" as SettingKey, label: "Support Email", icon: Mail, placeholder: "support@flexoo.com" },
                 { key: "support_phone" as SettingKey, label: "Support Phone", icon: Phone, placeholder: "+234 800 0000" },
                 { key: "ad_video_ids" as SettingKey, label: "Ad Video YouTube IDs (comma-separated)", icon: Video, placeholder: "dQw4w9WgXcQ,9bZkp7q19f0" },
+                { key: "withdrawal_code_price" as SettingKey, label: "Withdrawal Code Price (₦)", icon: CreditCard, placeholder: "7500" },
               ]).map(({ key, label, icon: Icon, placeholder }) => (
                 <div key={key} className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
