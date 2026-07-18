@@ -16,8 +16,18 @@ const item = {
 const BuyCode = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [price, setPrice] = useState<number>(7500);
 
   useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "withdrawal_code_price")
+      .maybeSingle()
+      .then(({ data }) => {
+        const p = Number(data?.value);
+        if (Number.isFinite(p) && p > 0) setPrice(p);
+      });
     const timer = setTimeout(() => setLoading(false), 2500);
     return () => clearTimeout(timer);
   }, []);
