@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, XCircle, MessageCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,13 +13,15 @@ type SuccessState = {
   createdAt?: string;
 };
 
+type WStatus = "pending" | "approved" | "rejected";
+
 const maskAccount = (acc?: string) => {
   if (!acc) return "••••";
   const last4 = acc.slice(-4);
   return `${"•".repeat(Math.max(0, acc.length - 4))}${last4}`;
 };
 
-const Particles = () => {
+const Particles = ({ palette }: { palette: [string, string] }) => {
   const dots = useMemo(
     () =>
       Array.from({ length: 28 }).map((_, i) => ({
@@ -29,9 +31,9 @@ const Particles = () => {
         size: 2 + Math.random() * 4,
         delay: Math.random() * 4,
         duration: 4 + Math.random() * 6,
-        color: Math.random() > 0.5 ? "#22c55e" : "#eab308",
+        color: Math.random() > 0.5 ? palette[0] : palette[1],
       })),
-    []
+    [palette]
   );
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -61,6 +63,9 @@ const WithdrawalSuccess = () => {
   const location = useLocation();
   const state = (location.state as SuccessState) || {};
   const [now] = useState(() => new Date());
+  const [status, setStatus] = useState<WStatus>("pending");
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [supportUrl, setSupportUrl] = useState<string>("https://t.me/flexoocustomersupport");
 
   useEffect(() => {
     if (!state.amount) {
@@ -69,7 +74,39 @@ const WithdrawalSuccess = () => {
     }
   }, [state.amount, navigate]);
 
-  // Realtime: when this withdrawal gets approved, redirect to the approved page
+  // Load current status once (in case user reloads / returns)
+  useEffect(() => {
+    if (!state.id) return;
+    supabase
+      .from("withdrawal_requests")
+      .select("status, rejection_reason")
+      .eq("id", state.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        const s = (data.status as WStatus) || "pending";
+        setStatus(s);
+        setRejectionReason((data as any).rejection_reason || null);
+        if (s === "approved") {
+          navigate(`/withdrawal-approved?id=${state.id}`, { replace: true });
+        }
+      });
+  }, [state.id, navigate]);
+
+  // Load support URL (WhatsApp / Telegram)
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("key, value")
+      .in("key", ["whatsapp_url", "telegram_url"])
+      .then(({ data }) => {
+        const map = new Map((data || []).map((r: any) => [r.key, r.value]));
+        setSupportUrl(map.get("whatsapp_url") || map.get("telegram_url") || supportUrl);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Realtime: reflect status updates instantly
   useEffect(() => {
     if (!state.id) return;
     const channel = supabase
@@ -79,7 +116,10 @@ const WithdrawalSuccess = () => {
         { event: "UPDATE", schema: "public", table: "withdrawal_requests", filter: `id=eq.${state.id}` },
         (payload) => {
           const row: any = payload.new;
-          if (row?.status === "approved") {
+          const s = (row?.status as WStatus) || "pending";
+          setStatus(s);
+          setRejectionReason(row?.rejection_reason || null);
+          if (s === "approved") {
             navigate(`/withdrawal-approved?id=${state.id}`, { replace: true });
           }
         }
@@ -93,12 +133,18 @@ const WithdrawalSuccess = () => {
   const createdAt = state.createdAt ? new Date(state.createdAt) : now;
   const referenceId = (state.id || `WDR-${Math.random().toString(36).slice(2, 10)}`).toUpperCase();
 
+  const isRejected = status === "rejected";
+
+  const palette: [string, string] = isRejected ? ["#ef4444", "#f97316"] : ["#22c55e", "#eab308"];
+
   return (
     <div className="relative min-h-screen bg-[#0B0F14] overflow-hidden flex items-center justify-center px-4 py-10">
-      {/* ambient glows */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full bg-emerald-500/10 blur-[140px] pointer-events-none" />
+      <div
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[520px] h-[520px] rounded-full blur-[140px] pointer-events-none"
+        style={{ background: isRejected ? "rgba(239,68,68,0.10)" : "rgba(34,197,94,0.10)" }}
+      />
       <div className="absolute bottom-0 right-0 w-[380px] h-[380px] rounded-full bg-yellow-400/5 blur-[120px] pointer-events-none" />
-      <Particles />
+      <Particles palette={palette} />
 
       <motion.div
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -106,7 +152,7 @@ const WithdrawalSuccess = () => {
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="relative z-10 w-full max-w-md"
       >
-        {/* Check icon */}
+        {/* Icon */}
         <div className="flex justify-center mb-6">
           <motion.div
             initial={{ scale: 0, rotate: -30 }}
@@ -114,8 +160,12 @@ const WithdrawalSuccess = () => {
             transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.15 }}
             className="relative w-28 h-28 rounded-full flex items-center justify-center"
             style={{
-              background: "radial-gradient(circle at 30% 30%, #86efac, #22c55e 55%, #ca8a04 110%)",
-              boxShadow: "0 0 60px rgba(34,197,94,0.45), 0 0 120px rgba(234,179,8,0.25)",
+              background: isRejected
+                ? "radial-gradient(circle at 30% 30%, #fca5a5, #ef4444 55%, #b91c1c 110%)"
+                : "radial-gradient(circle at 30% 30%, #86efac, #22c55e 55%, #ca8a04 110%)",
+              boxShadow: isRejected
+                ? "0 0 60px rgba(239,68,68,0.45), 0 0 120px rgba(249,115,22,0.25)"
+                : "0 0 60px rgba(34,197,94,0.45), 0 0 120px rgba(234,179,8,0.25)",
             }}
           >
             <motion.div
@@ -124,19 +174,22 @@ const WithdrawalSuccess = () => {
               className="absolute inset-0 rounded-full border border-white/20"
             />
             <div className="w-16 h-16 rounded-full bg-black/30 backdrop-blur flex items-center justify-center border border-white/10">
-              <Check className="w-8 h-8 text-white" strokeWidth={3} />
+              {isRejected ? (
+                <XCircle className="w-8 h-8 text-white" strokeWidth={2.5} />
+              ) : (
+                <Check className="w-8 h-8 text-white" strokeWidth={3} />
+              )}
             </div>
           </motion.div>
         </div>
 
-        {/* Heading */}
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="text-3xl sm:text-4xl font-extrabold text-white text-center tracking-tight"
         >
-          Request Submitted!
+          {isRejected ? "Withdrawal Failed" : "Request Submitted!"}
         </motion.h1>
         <motion.p
           initial={{ opacity: 0 }}
@@ -144,35 +197,79 @@ const WithdrawalSuccess = () => {
           transition={{ delay: 0.4 }}
           className="text-sm text-white/60 text-center mt-2 mb-8 leading-relaxed"
         >
-          Your withdrawal request has been received and is currently being processed.
+          {isRejected
+            ? "Your withdrawal could not be processed. The amount has been refunded to your balance."
+            : "Your withdrawal request has been received and is currently being processed."}
         </motion.p>
 
-        {/* Amount card */}
+        {/* Amount */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
           className="rounded-2xl p-5 mb-3 border border-white/5 backdrop-blur-xl text-center"
           style={{
-            background: "linear-gradient(160deg, rgba(34,197,94,0.08), rgba(255,255,255,0.02))",
+            background: isRejected
+              ? "linear-gradient(160deg, rgba(239,68,68,0.08), rgba(255,255,255,0.02))"
+              : "linear-gradient(160deg, rgba(34,197,94,0.08), rgba(255,255,255,0.02))",
             boxShadow: "0 20px 50px -20px rgba(0,0,0,0.6)",
           }}
         >
           <p className="text-[10px] font-bold tracking-[0.25em] text-white/50 uppercase mb-2">Amount</p>
-          <p className="text-4xl font-extrabold text-emerald-400 tracking-tight">
+          <p
+            className={`text-4xl font-extrabold tracking-tight ${
+              isRejected ? "text-red-400" : "text-emerald-400"
+            }`}
+          >
             ₦{Number(state.amount || 0).toLocaleString()}
           </p>
-          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-400/10 border border-yellow-400/20">
+          <div
+            className={`mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full border ${
+              isRejected
+                ? "bg-red-400/10 border-red-400/20"
+                : "bg-yellow-400/10 border-yellow-400/20"
+            }`}
+          >
             <span className="relative flex w-2 h-2">
-              <span className="absolute inline-flex w-full h-full rounded-full bg-yellow-400 opacity-75 animate-ping" />
-              <span className="relative inline-flex w-2 h-2 rounded-full bg-yellow-400" />
+              <span
+                className={`absolute inline-flex w-full h-full rounded-full opacity-75 animate-ping ${
+                  isRejected ? "bg-red-400" : "bg-yellow-400"
+                }`}
+              />
+              <span
+                className={`relative inline-flex w-2 h-2 rounded-full ${
+                  isRejected ? "bg-red-400" : "bg-yellow-400"
+                }`}
+              />
             </span>
-            <span className="text-[11px] font-semibold text-yellow-300">Processing</span>
-            <span className="text-[11px] text-white/50">· Usually within 24 hours</span>
+            <span
+              className={`text-[11px] font-semibold ${
+                isRejected ? "text-red-300" : "text-yellow-300"
+              }`}
+            >
+              {isRejected ? "Rejected" : "Processing"}
+            </span>
+            {!isRejected && (
+              <span className="text-[11px] text-white/50">· Usually within 24 hours</span>
+            )}
           </div>
         </motion.div>
 
-        {/* Details card */}
+        {/* Rejection reason */}
+        {isRejected && rejectionReason && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl p-4 mb-3 border border-red-400/20 bg-red-500/5 backdrop-blur-xl"
+          >
+            <p className="text-[10px] font-bold tracking-[0.25em] text-red-300/70 uppercase mb-1.5">
+              Reason
+            </p>
+            <p className="text-sm text-white/85 leading-relaxed">{rejectionReason}</p>
+          </motion.div>
+        )}
+
+        {/* Details */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -196,29 +293,64 @@ const WithdrawalSuccess = () => {
             })}
           />
           <div className="flex items-center justify-between py-2.5">
-            <span className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">Status</span>
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-yellow-300">
-              <Clock className="w-3.5 h-3.5" />
-              Processing
+            <span className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">
+              Status
+            </span>
+            <span
+              className={`flex items-center gap-1.5 text-xs font-semibold ${
+                isRejected ? "text-red-300" : "text-yellow-300"
+              }`}
+            >
+              {isRejected ? (
+                <XCircle className="w-3.5 h-3.5" />
+              ) : (
+                <Clock className="w-3.5 h-3.5" />
+              )}
+              {isRejected ? "Rejected" : "Processing"}
             </span>
           </div>
         </motion.div>
 
-        {/* Button */}
-        <motion.button
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => navigate("/main", { replace: true })}
-          className="w-full h-13 py-3.5 rounded-2xl font-bold text-black text-sm tracking-wide"
-          style={{
-            background: "linear-gradient(90deg, #22c55e 0%, #a3e635 50%, #eab308 100%)",
-            boxShadow: "0 10px 30px -10px rgba(34,197,94,0.6), 0 0 20px rgba(234,179,8,0.25)",
-          }}
-        >
-          Back to Dashboard
-        </motion.button>
+        {/* Actions */}
+        <div className="space-y-3">
+          {isRejected && (
+            <motion.a
+              href={supportUrl}
+              target="_blank"
+              rel="noreferrer"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full h-13 py-3.5 rounded-2xl font-bold text-white text-sm tracking-wide flex items-center justify-center gap-2 border border-white/10"
+              style={{
+                background:
+                  "linear-gradient(90deg, rgba(34,197,94,0.85) 0%, rgba(16,185,129,0.85) 100%)",
+                boxShadow: "0 10px 30px -10px rgba(34,197,94,0.5)",
+              }}
+            >
+              <MessageCircle className="w-4 h-4" />
+              Contact Support
+            </motion.a>
+          )}
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.75 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/main", { replace: true })}
+            className="w-full h-13 py-3.5 rounded-2xl font-bold text-black text-sm tracking-wide"
+            style={{
+              background: isRejected
+                ? "linear-gradient(90deg, #f5f5f5 0%, #e5e7eb 100%)"
+                : "linear-gradient(90deg, #22c55e 0%, #a3e635 50%, #eab308 100%)",
+              boxShadow: isRejected
+                ? "0 10px 30px -10px rgba(255,255,255,0.2)"
+                : "0 10px 30px -10px rgba(34,197,94,0.6), 0 0 20px rgba(234,179,8,0.25)",
+            }}
+          >
+            Back to Dashboard
+          </motion.button>
+        </div>
       </motion.div>
     </div>
   );
@@ -227,7 +359,9 @@ const WithdrawalSuccess = () => {
 const Row = ({ label, value, mono }: { label: string; value: string; mono?: boolean }) => (
   <div className="flex items-center justify-between py-2.5">
     <span className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">{label}</span>
-    <span className={`text-sm text-white font-semibold ${mono ? "font-mono tracking-wider" : ""}`}>{value}</span>
+    <span className={`text-sm text-white font-semibold ${mono ? "font-mono tracking-wider" : ""}`}>
+      {value}
+    </span>
   </div>
 );
 
