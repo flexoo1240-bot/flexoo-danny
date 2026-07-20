@@ -243,6 +243,7 @@ export type Database = {
           phone: string | null
           referral_code: string | null
           referred_by: string | null
+          telegram_join_completed: boolean
           total_tasks_completed: number
           updated_at: string
           user_id: string
@@ -257,6 +258,7 @@ export type Database = {
           phone?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          telegram_join_completed?: boolean
           total_tasks_completed?: number
           updated_at?: string
           user_id: string
@@ -271,6 +273,7 @@ export type Database = {
           phone?: string | null
           referral_code?: string | null
           referred_by?: string | null
+          telegram_join_completed?: boolean
           total_tasks_completed?: number
           updated_at?: string
           user_id?: string
@@ -478,6 +481,10 @@ export type Database = {
         Returns: undefined
       }
       admin_regenerate_fpc_code: { Args: { p_id: string }; Returns: string }
+      admin_reset_telegram_join: {
+        Args: { p_profile_id: string }
+        Returns: undefined
+      }
       admin_set_default_payment_account: {
         Args: { p_id: string }
         Returns: undefined
@@ -547,6 +554,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_telegram_join: { Args: never; Returns: undefined }
       generate_fpc_code: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       generate_withdrawal_code: { Args: never; Returns: string }

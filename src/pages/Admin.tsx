@@ -74,7 +74,7 @@ interface FpcCode {
 
 type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc" | "settings";
 
-const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids", "withdrawal_code_price"] as const;
+const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids", "withdrawal_code_price", "telegram_channel_url", "telegram_join_required", "telegram_countdown_seconds"] as const;
 type SettingKey = typeof SETTING_KEYS[number];
 
 const exportToCSV = (rows: Record<string, unknown>[], filename: string) => {
@@ -110,6 +110,9 @@ const Admin = () => {
     support_phone: "",
     ad_video_ids: "",
     withdrawal_code_price: "",
+    telegram_channel_url: "",
+    telegram_join_required: "true",
+    telegram_countdown_seconds: "15",
   });
   const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
@@ -666,6 +669,20 @@ const Admin = () => {
                               <span className="text-[9px] text-muted-foreground">Code: {u.referral_code || "—"}</span>
                             </div>
                             <p className="text-[9px] text-muted-foreground mt-1">Joined {new Date(u.created_at).toLocaleDateString()}</p>
+                            <button
+                              onClick={async () => {
+                                if (!window.confirm(`Reset Telegram-join status for ${u.full_name || u.username}?`)) return;
+                                setProcessing(u.id);
+                                const { error } = await supabase.rpc("admin_reset_telegram_join", { p_profile_id: u.id });
+                                if (error) toast.error(error.message);
+                                else toast.success("Telegram-join status reset");
+                                setProcessing(null);
+                              }}
+                              disabled={processing === u.id}
+                              className="mt-2 text-[9px] font-bold uppercase text-primary hover:underline disabled:opacity-50"
+                            >
+                              Reset Telegram Join
+                            </button>
                           </>
                         )}
                       </div>
