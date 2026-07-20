@@ -110,6 +110,9 @@ const Admin = () => {
     support_phone: "",
     ad_video_ids: "",
     withdrawal_code_price: "",
+    telegram_channel_url: "",
+    telegram_join_required: "true",
+    telegram_countdown_seconds: "15",
   });
   const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
