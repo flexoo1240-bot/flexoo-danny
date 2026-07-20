@@ -117,7 +117,7 @@ const Login = () => {
                 return;
               }
               toast.success("Signed in successfully!");
-              navigate("/dashboard");
+              navigate("/telegram-join");
             } catch (err: any) {
               setError(err.message || "Something went wrong.");
             } finally {
