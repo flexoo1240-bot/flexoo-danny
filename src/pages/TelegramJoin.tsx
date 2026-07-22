@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Send, CheckCircle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useTelegramGate } from "@/hooks/useTelegramGate";
 import { useAuth } from "@/contexts/AuthContext";
 import flexooLogo from "@/assets/flexoo-logo.png";
 
@@ -20,27 +19,32 @@ const item = {
 const TelegramJoin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { loading, required, completed, channelUrl } = useTelegramGate();
+  const [channelUrl, setChannelUrl] = useState("https://t.me/+Mg7JaPJoFNVhMTc0");
   const [opened, setOpened] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Redirect once completed or not required
   useEffect(() => {
-    if (loading) return;
-    if (!required || completed) navigate("/home", { replace: true });
-  }, [loading, required, completed, navigate]);
-
-  // Prevent back-navigation escape
-  useEffect(() => {
-    const onPop = () => {
-      if (!completed && required) {
-        window.history.pushState(null, "", window.location.href);
+    const fetchChannelUrl = async () => {
+      try {
+        const { data } = await supabase
+          .from("app_settings")
+          .select("value")
+          .eq("key", "telegram_channel_url")
+          .maybeSingle();
+        
+        if (data?.value) {
+          setChannelUrl(data.value);
+        }
+      } catch (error) {
+        console.error("Error fetching channel URL:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    window.history.pushState(null, "", window.location.href);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, [completed, required]);
+
+    fetchChannelUrl();
+  }, []);
 
   const handleOpenChannel = () => {
     window.open(channelUrl, "_blank", "noopener,noreferrer");
@@ -53,7 +57,6 @@ const TelegramJoin = () => {
     
     try {
       if (user) {
-        // Update user profile to mark Telegram join as completed
         const { error } = await supabase
           .from("profiles")
           .update({ telegram_join_completed: true })
@@ -74,12 +77,26 @@ const TelegramJoin = () => {
     }
   };
 
+  const handleSkip = () => {
+    navigate("/home", { replace: true });
+  };
+
   const disabled = !opened || submitting;
   const label = !opened
     ? "I've Joined — Continue"
     : submitting
     ? "Verifying..."
     : "I've Joined — Continue";
+
+  if (isLoading) {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background px-4">
+        <div className="flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-background px-4">
@@ -117,7 +134,7 @@ const TelegramJoin = () => {
           Welcome to <span className="text-primary">Flexoo</span>
         </motion.h1>
         <motion.p variants={item} className="text-muted-foreground text-sm leading-relaxed mb-8 max-w-xs">
-          Join our official Telegram channel to unlock the platform. This step is required.
+          Join our official Telegram channel to stay updated with announcements and community updates.
         </motion.p>
 
         <motion.div
@@ -151,7 +168,7 @@ const TelegramJoin = () => {
           </button>
 
           <p className="text-xs text-muted-foreground/60 mt-4 mb-3">
-            After joining, tap Continue below
+            {opened ? "You've opened the channel. Click continue below." : "After joining, tap Continue below"}
           </p>
 
           <button
@@ -159,7 +176,7 @@ const TelegramJoin = () => {
             onClick={handleContinue}
             disabled={disabled}
             aria-disabled={disabled}
-            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50 hover:enabled:shadow-lg"
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50 hover:bg-primary/10 active:bg-primary/20"
             style={{ background: "var(--glass-bg)" }}
           >
             {submitting ? (
@@ -169,10 +186,19 @@ const TelegramJoin = () => {
             )}
             {label}
           </button>
+
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={submitting}
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-3 text-muted-foreground hover:text-foreground border border-muted/30 hover:border-muted/60"
+          >
+            Skip for Now
+          </button>
         </motion.div>
 
         <motion.p variants={item} className="mt-6 text-xs text-muted-foreground/60">
-          You must join our Telegram channel to access the platform.
+          Joining our Telegram channel is optional but recommended to stay connected.
         </motion.p>
       </motion.div>
     </div>
