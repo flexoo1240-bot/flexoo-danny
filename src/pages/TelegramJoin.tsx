@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTelegramGate } from "@/hooks/useTelegramGate";
+import { useAuth } from "@/contexts/AuthContext";
 import flexooLogo from "@/assets/flexoo-logo.png";
 
 const container = {
@@ -18,11 +19,10 @@ const item = {
 
 const TelegramJoin = () => {
   const navigate = useNavigate();
-  const { loading, required, completed, channelUrl, countdownSeconds } = useTelegramGate();
+  const { user } = useAuth();
+  const { loading, required, completed, channelUrl } = useTelegramGate();
   const [opened, setOpened] = useState(false);
-  const [remaining, setRemaining] = useState<number>(0);
   const [submitting, setSubmitting] = useState(false);
-  const timerRef = useRef<number | null>(null);
 
   // Redirect once completed or not required
   useEffect(() => {
@@ -42,48 +42,41 @@ const TelegramJoin = () => {
     return () => window.removeEventListener("popstate", onPop);
   }, [completed, required]);
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current);
-    };
-  }, []);
-
   const handleOpenChannel = () => {
     window.open(channelUrl, "_blank", "noopener,noreferrer");
     setOpened(true);
-    setRemaining(countdownSeconds);
-    if (timerRef.current) window.clearInterval(timerRef.current);
-    timerRef.current = window.setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          if (timerRef.current) window.clearInterval(timerRef.current);
-          return 0;
-        }
-        return r - 1;
-      });
-    }, 1000);
   };
 
- const handleContinue = async () => {
-  setSubmitting(true);
+  const handleContinue = async () => {
+    if (!opened || submitting) return;
+    setSubmitting(true);
+    
+    try {
+      if (user) {
+        // Update user profile to mark Telegram join as completed
+        const { error } = await supabase
+          .from("profiles")
+          .update({ telegram_join_completed: true })
+          .eq("user_id", user.id);
+        
+        if (error) {
+          toast.error(error.message || "Could not save completion. Try again.");
+          setSubmitting(false);
+          return;
+        }
+      }
+      
+      toast.success("Welcome aboard!");
+      navigate("/home", { replace: true });
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+      setSubmitting(false);
+    }
+  };
 
-  try {
-    localStorage.setItem("telegram_joined", "true");
-
-    toast.success("Welcome aboard!");
-
-    navigate("/home", { replace: true });
-  } catch (error) {
-    toast.error("Something went wrong.");
-    setSubmitting(false);
-  }
-};
-
-  const disabled = !opened || remaining > 0 || submitting;
+  const disabled = !opened || submitting;
   const label = !opened
     ? "I've Joined — Continue"
-    : remaining > 0
-    ? `I've Joined — Continue (${remaining})`
     : submitting
     ? "Verifying..."
     : "I've Joined — Continue";
@@ -158,9 +151,7 @@ const TelegramJoin = () => {
           </button>
 
           <p className="text-xs text-muted-foreground/60 mt-4 mb-3">
-            {opened && remaining > 0
-              ? "Please wait while we confirm your join..."
-              : "After joining, tap Continue below"}
+            After joining, tap Continue below
           </p>
 
           <button
@@ -168,10 +159,10 @@ const TelegramJoin = () => {
             onClick={handleContinue}
             disabled={disabled}
             aria-disabled={disabled}
-            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:bg-primary/10 enabled:hover:scale-[1.02] enabled:active:scale-[0.98]"
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50 hover:enabled:shadow-lg"
             style={{ background: "var(--glass-bg)" }}
           >
-            {opened && remaining > 0 ? (
+            {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin text-primary" />
             ) : (
               <CheckCircle className="w-4 h-4 text-primary" />
