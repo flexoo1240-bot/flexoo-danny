@@ -64,18 +64,20 @@ const TelegramJoin = () => {
     }, 1000);
   };
 
-  const handleContinue = async () => {
-    if (!opened || remaining > 0 || submitting) return;
-    setSubmitting(true);
-    const { error } = await supabase.rpc("complete_telegram_join");
-    if (error) {
-      toast.error(error.message || "Could not verify. Try again.");
-      setSubmitting(false);
-      return;
-    }
+ const handleContinue = async () => {
+  setSubmitting(true);
+
+  try {
+    localStorage.setItem("telegram_joined", "true");
+
     toast.success("Welcome aboard!");
+
     navigate("/home", { replace: true });
-  };
+  } catch (error) {
+    toast.error("Something went wrong.");
+    setSubmitting(false);
+  }
+};
 
   const disabled = !opened || remaining > 0 || submitting;
   const label = !opened
