@@ -7,7 +7,6 @@ export interface TelegramGateState {
   required: boolean;
   completed: boolean;
   channelUrl: string;
-  countdownSeconds: number;
   refresh: () => void;
 }
 
@@ -19,7 +18,6 @@ export const useTelegramGate = (): TelegramGateState => {
   const [required, setRequired] = useState(true);
   const [completed, setCompleted] = useState(false);
   const [channelUrl, setChannelUrl] = useState(DEFAULT_URL);
-  const [countdownSeconds, setCountdownSeconds] = useState(15);
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
@@ -36,7 +34,7 @@ export const useTelegramGate = (): TelegramGateState => {
         supabase
           .from("app_settings")
           .select("key, value")
-          .in("key", ["telegram_channel_url", "telegram_join_required", "telegram_countdown_seconds"]),
+          .in("key", ["telegram_channel_url", "telegram_join_required"]),
         supabase
           .from("profiles")
           .select("telegram_join_completed")
@@ -48,8 +46,6 @@ export const useTelegramGate = (): TelegramGateState => {
       (settings || []).forEach((r: any) => (map[r.key] = r.value ?? ""));
       setChannelUrl(map.telegram_channel_url || DEFAULT_URL);
       setRequired((map.telegram_join_required ?? "true").toLowerCase() !== "false");
-      const n = parseInt(map.telegram_countdown_seconds || "15", 10);
-      setCountdownSeconds(Number.isFinite(n) && n > 0 ? n : 15);
       setCompleted(Boolean((profile as any)?.telegram_join_completed));
       setLoading(false);
     })();
@@ -63,7 +59,6 @@ export const useTelegramGate = (): TelegramGateState => {
     required,
     completed,
     channelUrl,
-    countdownSeconds,
     refresh: () => setNonce((n) => n + 1),
   };
 };
