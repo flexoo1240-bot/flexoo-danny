@@ -63,6 +63,7 @@ const TelegramJoin = () => {
           .eq("user_id", user.id);
         
         if (error) {
+          console.error("Database error updating telegram_join_completed:", error);
           toast.error(error.message || "Could not save completion. Try again.");
           setSubmitting(false);
           return;
@@ -72,6 +73,7 @@ const TelegramJoin = () => {
       toast.success("Welcome aboard!");
       navigate("/home", { replace: true });
     } catch (error) {
+      console.error("Error in handleContinue:", error);
       toast.error("An error occurred. Please try again.");
       setSubmitting(false);
     }
@@ -87,14 +89,17 @@ const TelegramJoin = () => {
           .eq("user_id", user.id);
         
         if (error) {
+          console.error("Database error updating telegram_onboarding_skipped:", error);
           toast.error(error.message || "Could not save skip status. Try again.");
           setSubmitting(false);
           return;
         }
       }
       
+      toast.success("Skipped!");
       navigate("/dashboard", { replace: true });
     } catch (error) {
+      console.error("Error in handleSkip:", error);
       toast.error("An error occurred. Please try again.");
       setSubmitting(false);
     }
