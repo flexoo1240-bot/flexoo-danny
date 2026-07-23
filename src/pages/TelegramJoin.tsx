@@ -78,7 +78,7 @@ const TelegramJoin = () => {
   };
 
   const handleSkip = () => {
-    navigate("/home", { replace: true });
+    navigate("/dashboard", { replace: true });
   };
 
   const disabled = !opened || submitting;
@@ -176,7 +176,7 @@ const TelegramJoin = () => {
             onClick={handleContinue}
             disabled={disabled}
             aria-disabled={disabled}
-            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50 hover:bg-primary/10 active:bg-primary/20"
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 border border-primary/30 text-foreground disabled:opacity-50"
             style={{ background: "var(--glass-bg)" }}
           >
             {submitting ? (
@@ -191,7 +191,7 @@ const TelegramJoin = () => {
             type="button"
             onClick={handleSkip}
             disabled={submitting}
-            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-3 text-muted-foreground hover:text-foreground border border-muted/30 hover:border-muted/60"
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-3 text-muted-foreground hover:text-foreground border border-border/40"
           >
             Skip for Now
           </button>
