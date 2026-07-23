@@ -77,8 +77,27 @@ const TelegramJoin = () => {
     }
   };
 
-  const handleSkip = () => {
-    navigate("/dashboard", { replace: true });
+  const handleSkip = async () => {
+    setSubmitting(true);
+    try {
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ telegram_onboarding_skipped: true })
+          .eq("user_id", user.id);
+        
+        if (error) {
+          toast.error(error.message || "Could not save skip status. Try again.");
+          setSubmitting(false);
+          return;
+        }
+      }
+      
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   const disabled = !opened || submitting;
@@ -191,7 +210,7 @@ const TelegramJoin = () => {
             type="button"
             onClick={handleSkip}
             disabled={submitting}
-            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-3 text-muted-foreground hover:text-foreground border border-border/40"
+            className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 mt-3 text-muted-foreground hover:text-foreground border border-border disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Skip for Now
           </button>

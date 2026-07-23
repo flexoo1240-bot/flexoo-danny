@@ -210,6 +210,11 @@ const SignupSuccess = () => {
     }
   };
 
+  const handleContinue = () => {
+    // Navigate to telegram-join (the onboarding page will check if it's already completed/skipped)
+    navigate("/telegram-join", { replace: true });
+  };
+
   if (verifying || verifyError) {
     return (
       <div className="relative min-h-screen bg-background overflow-hidden flex items-center justify-center px-6">
@@ -418,7 +423,7 @@ const SignupSuccess = () => {
             <Download className="w-3.5 h-3.5 opacity-60" />
           </button>
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={handleContinue}
             className="w-full h-11 rounded-xl text-sm font-semibold bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20 transition-colors flex items-center justify-center gap-2"
           >
             Continue

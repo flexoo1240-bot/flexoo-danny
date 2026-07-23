@@ -37,7 +37,7 @@ export const useTelegramGate = (): TelegramGateState => {
           .in("key", ["telegram_channel_url", "telegram_join_required"]),
         supabase
           .from("profiles")
-          .select("telegram_join_completed")
+          .select("telegram_join_completed, telegram_onboarding_skipped")
           .eq("user_id", user.id)
           .maybeSingle(),
       ]);
@@ -46,7 +46,15 @@ export const useTelegramGate = (): TelegramGateState => {
       (settings || []).forEach((r: any) => (map[r.key] = r.value ?? ""));
       setChannelUrl(map.telegram_channel_url || DEFAULT_URL);
       setRequired((map.telegram_join_required ?? "true").toLowerCase() !== "false");
-      setCompleted(Boolean((profile as any)?.telegram_join_completed));
+      
+      // Onboarding is complete if user either:
+      // 1. Joined the channel (telegram_join_completed = true), OR
+      // 2. Skipped the onboarding (telegram_onboarding_skipped = true)
+      const isCompleted = 
+        Boolean((profile as any)?.telegram_join_completed) || 
+        Boolean((profile as any)?.telegram_onboarding_skipped);
+      
+      setCompleted(isCompleted);
       setLoading(false);
     })();
     return () => {
