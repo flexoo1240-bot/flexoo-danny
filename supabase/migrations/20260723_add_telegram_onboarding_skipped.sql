@@ -1,6 +1,6 @@
 
 ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS telegram_onboarding_skipped boolean NOT NULL DEFAULT false;
+  ADD COLUMN IF NOT EXISTS telegram_onboarding_skipped boolean NOT NULL DEFAULT true;
 
 -- Reset both flags to false for existing users (optional, but maintains data integrity)
 -- UPDATE public.profiles SET telegram_onboarding_skipped = false WHERE telegram_onboarding_skipped IS NULL;
@@ -35,8 +35,8 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: admin role required';
   END IF;
   UPDATE public.profiles
-    SET telegram_join_completed = false,
-        telegram_onboarding_skipped = false
+    SET telegram_join_completed = true,
+        telegram_onboarding_skipped = true
     WHERE id = p_profile_id;
 END;
 $$;
