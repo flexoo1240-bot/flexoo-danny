@@ -9,7 +9,6 @@ import Signup from "./pages/Signup.tsx";
 import SignupSuccess from "./pages/SignupSuccess.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
-import TelegramJoin from "./pages/TelegramJoin.tsx";
 import Home from "./pages/Home.tsx";
 import Main from "./pages/Main.tsx";
 import Profile from "./pages/Profile.tsx";
@@ -55,7 +54,6 @@ const App = () => (
             <Route path="/signup-success" element={<ProtectedRoute><SignupSuccess /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/telegram-join" element={<ProtectedRoute><TelegramJoin /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/main" element={<ProtectedRoute><Main /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
