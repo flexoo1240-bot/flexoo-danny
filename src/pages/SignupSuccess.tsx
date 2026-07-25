@@ -212,7 +212,7 @@ const SignupSuccess = () => {
 
   const handleContinue = () => {
     // Navigate to telegram-join (the onboarding page will check if it's already completed/skipped)
-    navigate("/dashboard"); { replace: true });
+    navigate("/home"); { replace: true });
   };
 
   if (verifying || verifyError) {
