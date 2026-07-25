@@ -211,7 +211,6 @@ const SignupSuccess = () => {
   };
 
   const handleContinue = () => {
-    // Navigate to telegram-join (the onboarding page will check if it's already completed/skipped)
     navigate("/home"); { replace: true });
   };
 
