@@ -125,7 +125,7 @@ const Dashboard = () => {
           <p className="text-xs text-muted-foreground/60 mt-4 mb-3">Already joined?</p>
 
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/main")}
             className="w-full h-12 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] border border-primary/30 text-foreground hover:bg-primary/10"
             style={{
               background: "var(--glass-bg)",
