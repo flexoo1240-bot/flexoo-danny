@@ -260,13 +260,13 @@ const SignupSuccess = () => {
                 <div className="h-1.5 w-full rounded-full bg-primary/10 overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, (attempt / MAX_ATTEMPTS) * 100)}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    initial={{ width: "10%" }}
+                    animate={{ width: ["10%", "90%"] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
-                  <span>Attempt {Math.max(1, attempt)} of {MAX_ATTEMPTS}</span>
+                  <span>Crediting your wallet…</span>
                   <span>
                     {currentBalance === null
                       ? "Connecting…"
