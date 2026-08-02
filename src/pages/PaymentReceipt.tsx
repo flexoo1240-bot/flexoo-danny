@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SignedImage from "@/components/SignedImage";
 
 interface PaymentRecord {
   id: string;
@@ -213,7 +214,7 @@ const PaymentReceipt = () => {
                       className="w-full inner-card rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 transition-colors"
                     >
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary shrink-0">
-                        <img src={pay.receipt_url} alt="Receipt" className="w-full h-full object-cover" />
+                        <SignedImage value={pay.receipt_url} alt="Receipt" className="w-full h-full object-cover" />
                       </div>
                       <div className="text-left flex-1">
                         <p className="text-[11px] font-bold text-foreground">View Receipt</p>
@@ -241,7 +242,7 @@ const PaymentReceipt = () => {
             className="max-w-lg w-full max-h-[80vh] overflow-auto rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={viewingReceipt} alt="Payment receipt" className="w-full rounded-2xl" />
+            <SignedImage value={viewingReceipt} alt="Payment receipt" className="w-full rounded-2xl" />
             <button
               onClick={() => setViewingReceipt(null)}
               className="btn-cta w-full h-10 rounded-xl text-sm font-bold mt-3"

@@ -19,6 +19,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import SignedImage from "@/components/SignedImage";
 import { toast } from "sonner";
 
 const container = {
@@ -112,16 +113,12 @@ const Payment = () => {
 
       if (uploadErr) throw uploadErr;
 
-      const { data: urlData } = supabase.storage
-        .from("receipts")
-        .getPublicUrl(filePath);
-
       const { data: inserted, error: insertErr } = await supabase
         .from("payments")
         .insert({
           user_id: user.id,
           amount: price,
-          receipt_url: urlData.publicUrl,
+          receipt_url: filePath,
         })
         .select("id")
         .single();
@@ -314,7 +311,7 @@ const Payment = () => {
                 {account.qr_code && (
                   <div className="flex flex-col items-center gap-2 mb-5">
                     <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.1em]">Scan to Pay</p>
-                    <img src={account.qr_code} alt="Payment QR code" className="w-40 h-40 rounded-xl border border-border object-contain bg-white p-2" />
+                    <SignedImage value={account.qr_code} alt="Payment QR code" className="w-40 h-40 rounded-xl border border-border object-contain bg-white p-2" />
                   </div>
                 )}
 

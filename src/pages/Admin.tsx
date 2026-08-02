@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Shield, CheckCircle, XCircle, Clock, RefreshCw, Lock, Image, CreditCard, Users, BarChart3, User, TrendingUp, Wallet, Activity, Download, Pencil, Save, X, Ticket, Copy, Trash2, RotateCcw, Plus, Settings as SettingsIcon, MessageCircle, Send, Mail, Phone, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import SignedImage from "@/components/SignedImage";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -891,7 +892,7 @@ const Admin = () => {
                           className="w-full mb-3 inner-card rounded-xl p-3 flex items-center gap-3 hover:border-primary/30 transition-colors"
                         >
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary shrink-0">
-                            <img src={pay.receipt_url} alt="Receipt" className="w-full h-full object-cover" />
+                            <SignedImage value={pay.receipt_url} alt="Receipt" className="w-full h-full object-cover" />
                           </div>
                           <div className="text-left">
                             <p className="text-[11px] font-bold text-foreground">View Receipt</p>
@@ -1194,7 +1195,7 @@ const Admin = () => {
             className="max-w-lg w-full max-h-[80vh] overflow-auto rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={receiptModal} alt="Payment receipt" className="w-full rounded-2xl" />
+            <SignedImage value={receiptModal} alt="Payment receipt" className="w-full rounded-2xl" />
             <button
               onClick={() => setReceiptModal(null)}
               className="btn-cta w-full h-10 rounded-xl text-sm font-bold mt-3"
