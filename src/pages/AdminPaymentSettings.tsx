@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import SignedImage from "@/components/SignedImage";
 
 type PaymentAccount = {
   id: string;
@@ -106,8 +107,7 @@ const AdminPaymentSettings = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      const { data } = supabase.storage.from("receipts").getPublicUrl(path);
-      setForm((f) => ({ ...f, qr_code: data.publicUrl }));
+      setForm((f) => ({ ...f, qr_code: path }));
       toast.success("QR code uploaded");
     }
     setUploading(false);
@@ -258,7 +258,7 @@ const AdminPaymentSettings = () => {
                     <div className="col-span-2"><span className="text-muted-foreground">Name: </span><span className="text-foreground font-semibold">{a.account_name}</span></div>
                   </div>
                   {a.qr_code && (
-                    <img src={a.qr_code} alt="QR code" className="mt-3 w-24 h-24 rounded-lg object-cover border border-border" />
+                    <SignedImage value={a.qr_code} alt="QR code" className="mt-3 w-24 h-24 rounded-lg object-cover border border-border" />
                   )}
                 </div>
               )
@@ -318,7 +318,7 @@ const EditCard = ({
     <div className="mt-3">
       <label className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">QR Code (optional)</label>
       <div className="flex items-center gap-3 mt-1">
-        {form.qr_code && <img src={form.qr_code} alt="QR" className="w-16 h-16 rounded-lg object-cover border border-border" />}
+        {form.qr_code && <SignedImage value={form.qr_code} alt="QR" className="w-16 h-16 rounded-lg object-cover border border-border" />}
         <label className="flex-1 cursor-pointer glass-card rounded-lg h-10 flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary hover:bg-primary/10">
           {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
           {uploading ? "Uploading..." : form.qr_code ? "Replace QR" : "Upload QR"}

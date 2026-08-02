@@ -211,7 +211,7 @@ const SignupSuccess = () => {
   };
 
   const handleContinue = () => {
-    navigate("/home"); { replace: true });
+    navigate("/home", { replace: true });
   };
 
   if (verifying || verifyError) {
