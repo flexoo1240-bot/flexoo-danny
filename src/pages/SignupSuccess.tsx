@@ -64,7 +64,11 @@ const SignupSuccess = () => {
           code: error.code,
           message: error.message,
         });
-        setVerifyError(error.message || "Could not credit your bonus right now.");
+        setVerifyError(
+          error.code === "42501"
+            ? "You need to be signed in to claim your welcome bonus."
+            : error.message || "Could not credit your bonus right now."
+        );
         setVerifying(false);
         return;
       }
