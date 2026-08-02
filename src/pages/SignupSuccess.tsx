@@ -29,10 +29,10 @@ const SignupSuccess = () => {
   const [sharing, setSharing] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
-  const MAX_ATTEMPTS = 15;
+  const [bonusAmount, setBonusAmount] = useState(170000);
   const firedRef = useRef(false);
+  const claimRef = useRef<Promise<{ data: any; error: any }> | null>(null);
   const BONUS = 170000;
 
   useEffect(() => {
@@ -44,41 +44,64 @@ const SignupSuccess = () => {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    const fetchProfile = async () =>
-      supabase
-        .from("profiles")
-        .select("full_name, referral_code, bonus_balance")
-        .eq("user_id", user.id)
-        .maybeSingle();
 
     (async () => {
       setVerifying(true);
       setVerifyError(null);
-      setAttempt(0);
-      setCurrentBalance(null);
-      for (let i = 0; i < MAX_ATTEMPTS; i++) {
-        if (cancelled) return;
-        setAttempt(i + 1);
-        const { data, error } = await fetchProfile();
-        if (!cancelled && data) {
-          setFullName(data.full_name || "");
-          setReferralCode(data.referral_code || "");
-          const bal = Number(data.bonus_balance ?? 0);
-          setCurrentBalance(bal);
-          if (bal >= BONUS) {
-            setVerifying(false);
-            return;
-          }
-        }
-        if (error && i === MAX_ATTEMPTS - 1) {
-          setVerifyError("We couldn't verify your bonus. Please try again.");
-        }
-        await new Promise((r) => setTimeout(r, 1000));
+
+      // Claim exactly once per mount lifecycle (StrictMode-safe, idempotent server-side).
+      if (!claimRef.current) {
+        claimRef.current = supabase.rpc("claim_welcome_bonus") as unknown as Promise<{
+          data: any;
+          error: any;
+        }>;
       }
-      if (!cancelled) {
-        setVerifyError("Bonus not credited yet. Please wait a moment and retry.");
+      const { data, error } = await claimRef.current;
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[welcome-bonus] rpc_failed", {
+          code: error.code,
+          message: error.message,
+        });
+        setVerifyError(
+          error.code === "42501"
+            ? "You need to be signed in to claim your welcome bonus."
+            : error.message || "Could not credit your bonus right now."
+        );
         setVerifying(false);
+        return;
       }
+
+      const result = (data ?? {}) as {
+        status?: string;
+        message?: string;
+        amount?: number;
+        balance?: number;
+      };
+
+      if (result.status !== "credited" && result.status !== "already_claimed") {
+        console.error("[welcome-bonus] claim_rejected", { status: result.status });
+        setVerifyError(result.message || "Could not credit your bonus right now.");
+        setVerifying(false);
+        return;
+      }
+
+      if (result.amount != null) setBonusAmount(Number(result.amount));
+      if (result.balance != null) setCurrentBalance(Number(result.balance));
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, referral_code, bonus_balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (profile) {
+        setFullName(profile.full_name || "");
+        setReferralCode(profile.referral_code || "");
+        setCurrentBalance(Number(profile.bonus_balance ?? 0));
+      }
+      setVerifying(false);
     })();
     return () => {
       cancelled = true;
@@ -246,13 +269,13 @@ const SignupSuccess = () => {
                 <div className="h-1.5 w-full rounded-full bg-primary/10 overflow-hidden">
                   <motion.div
                     className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, (attempt / MAX_ATTEMPTS) * 100)}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    initial={{ width: "10%" }}
+                    animate={{ width: ["10%", "90%"] }}
+                    transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
                   />
                 </div>
                 <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
-                  <span>Attempt {Math.max(1, attempt)} of {MAX_ATTEMPTS}</span>
+                  <span>Crediting your wallet…</span>
                   <span>
                     {currentBalance === null
                       ? "Connecting…"

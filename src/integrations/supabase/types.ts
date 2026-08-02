@@ -403,6 +403,27 @@ export type Database = {
         }
         Relationships: []
       }
+      welcome_bonus_claims: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           account_name: string
@@ -551,6 +572,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_welcome_bonus: { Args: never; Returns: Json }
       complete_telegram_join: { Args: never; Returns: undefined }
       generate_fpc_code: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
