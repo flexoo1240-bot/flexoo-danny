@@ -32,7 +32,7 @@ const SignupSuccess = () => {
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [bonusAmount, setBonusAmount] = useState(170000);
   const firedRef = useRef(false);
-  const claimedRef = useRef(false);
+  const claimRef = useRef<Promise<{ data: any; error: any }> | null>(null);
   const BONUS = 170000;
 
   useEffect(() => {
@@ -43,15 +43,20 @@ const SignupSuccess = () => {
 
   useEffect(() => {
     if (!user) return;
-    if (claimedRef.current) return;
-    claimedRef.current = true;
     let cancelled = false;
 
     (async () => {
       setVerifying(true);
       setVerifyError(null);
 
-      const { data, error } = await supabase.rpc("claim_welcome_bonus");
+      // Claim exactly once per mount lifecycle (StrictMode-safe, idempotent server-side).
+      if (!claimRef.current) {
+        claimRef.current = supabase.rpc("claim_welcome_bonus") as unknown as Promise<{
+          data: any;
+          error: any;
+        }>;
+      }
+      const { data, error } = await claimRef.current;
       if (cancelled) return;
 
       if (error) {
