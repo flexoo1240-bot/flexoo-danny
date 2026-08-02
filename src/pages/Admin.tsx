@@ -33,7 +33,7 @@ interface WithdrawalRequest {
   bank_name: string;
   account_number: string;
   account_name: string;
-  bvn: string;
+  fpc_code: string | null;
   status: string;
   created_at: string;
   reviewed_at: string | null;
@@ -562,7 +562,7 @@ const Admin = () => {
             <button
               onClick={() =>
                 tab === "withdrawals"
-                  ? exportToCSV(requests.map(({ id, amount, bank_name, account_number, account_name, bvn, status, created_at }) => ({ id, amount, bank_name, account_number, account_name, bvn, status, created_at })), "withdrawals")
+                  ? exportToCSV(requests.map(({ id, amount, bank_name, account_number, account_name, status, created_at }) => ({ id, amount, bank_name, account_number, account_name, status, created_at })), "withdrawals")
                   : exportToCSV(payments.map(({ id, amount, status, created_at, user_id }) => ({ id, amount, status, created_at, user_id })), "payments")
               }
               className="ml-auto glass-card px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1 text-primary hover:bg-primary/10 transition-all"
@@ -759,7 +759,7 @@ const Admin = () => {
                           { label: "Bank", value: req.bank_name },
                           { label: "Account No.", value: req.account_number },
                           { label: "Account Name", value: req.account_name },
-                          { label: "BVN", value: req.bvn.slice(0, 3) + "****" + req.bvn.slice(-4) },
+                          { label: "FPC Code", value: req.fpc_code ? req.fpc_code.slice(0, 4) + "****" + req.fpc_code.slice(-4) : "—" },
                         ].map(({ label, value }) => (
                           <div key={label} className="inner-card rounded-lg p-2">
                             <p className="text-[8px] text-muted-foreground uppercase tracking-wider font-bold">{label}</p>

@@ -410,7 +410,6 @@ export type Database = {
           amount: number
           approved_at: string | null
           bank_name: string
-          bvn: string | null
           created_at: string
           fpc_code: string | null
           id: string
@@ -426,7 +425,6 @@ export type Database = {
           amount: number
           approved_at?: string | null
           bank_name: string
-          bvn?: string | null
           created_at?: string
           fpc_code?: string | null
           id?: string
@@ -442,7 +440,6 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           bank_name?: string
-          bvn?: string | null
           created_at?: string
           fpc_code?: string | null
           id?: string

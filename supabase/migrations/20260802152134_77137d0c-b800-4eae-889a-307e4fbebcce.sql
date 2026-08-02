@@ -1,0 +1,1 @@
+ALTER TABLE public.withdrawal_requests DROP COLUMN IF EXISTS bvn;
