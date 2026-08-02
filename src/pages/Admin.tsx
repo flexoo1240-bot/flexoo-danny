@@ -23,7 +23,7 @@ const fpcCodeSchema = z.object({
 const paymentEditSchema = z.object({
   amount: z.number().positive({ message: "Amount must be positive" }).max(10_000_000, { message: "Amount too large" }),
   status: z.enum(["pending", "confirmed", "rejected"]),
-  receipt_url: z.string().trim().url({ message: "Must be a valid URL" }).max(500).or(z.literal("")),
+  receipt_url: z.string().trim().max(500).or(z.literal("")),
 });
 
 interface WithdrawalRequest {
