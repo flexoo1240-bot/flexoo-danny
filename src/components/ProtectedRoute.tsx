@@ -5,11 +5,8 @@ import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  const location = useLocation();
-  const { loading: gateLoading, required, completed } = useTelegramGate();
-  const { isAdmin, loading: adminLoading } = useAdminCheck();
 
- if (loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -19,7 +16,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
-  
   }
 
   return <>{children}</>;
