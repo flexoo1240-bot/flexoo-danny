@@ -29,10 +29,10 @@ const SignupSuccess = () => {
   const [sharing, setSharing] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [verifyError, setVerifyError] = useState<string | null>(null);
-  const [attempt, setAttempt] = useState(0);
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
-  const MAX_ATTEMPTS = 15;
+  const [bonusAmount, setBonusAmount] = useState(170000);
   const firedRef = useRef(false);
+  const claimedRef = useRef(false);
   const BONUS = 170000;
 
   useEffect(() => {
@@ -43,42 +43,56 @@ const SignupSuccess = () => {
 
   useEffect(() => {
     if (!user) return;
+    if (claimedRef.current) return;
+    claimedRef.current = true;
     let cancelled = false;
-    const fetchProfile = async () =>
-      supabase
-        .from("profiles")
-        .select("full_name, referral_code, bonus_balance")
-        .eq("user_id", user.id)
-        .maybeSingle();
 
     (async () => {
       setVerifying(true);
       setVerifyError(null);
-      setAttempt(0);
-      setCurrentBalance(null);
-      for (let i = 0; i < MAX_ATTEMPTS; i++) {
-        if (cancelled) return;
-        setAttempt(i + 1);
-        const { data, error } = await fetchProfile();
-        if (!cancelled && data) {
-          setFullName(data.full_name || "");
-          setReferralCode(data.referral_code || "");
-          const bal = Number(data.bonus_balance ?? 0);
-          setCurrentBalance(bal);
-          if (bal >= BONUS) {
-            setVerifying(false);
-            return;
-          }
-        }
-        if (error && i === MAX_ATTEMPTS - 1) {
-          setVerifyError("We couldn't verify your bonus. Please try again.");
-        }
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-      if (!cancelled) {
-        setVerifyError("Bonus not credited yet. Please wait a moment and retry.");
+
+      const { data, error } = await supabase.rpc("claim_welcome_bonus");
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[welcome-bonus] rpc_failed", {
+          code: error.code,
+          message: error.message,
+        });
+        setVerifyError(error.message || "Could not credit your bonus right now.");
         setVerifying(false);
+        return;
       }
+
+      const result = (data ?? {}) as {
+        status?: string;
+        message?: string;
+        amount?: number;
+        balance?: number;
+      };
+
+      if (result.status !== "credited" && result.status !== "already_claimed") {
+        console.error("[welcome-bonus] claim_rejected", { status: result.status });
+        setVerifyError(result.message || "Could not credit your bonus right now.");
+        setVerifying(false);
+        return;
+      }
+
+      if (result.amount != null) setBonusAmount(Number(result.amount));
+      if (result.balance != null) setCurrentBalance(Number(result.balance));
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, referral_code, bonus_balance")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (profile) {
+        setFullName(profile.full_name || "");
+        setReferralCode(profile.referral_code || "");
+        setCurrentBalance(Number(profile.bonus_balance ?? 0));
+      }
+      setVerifying(false);
     })();
     return () => {
       cancelled = true;
