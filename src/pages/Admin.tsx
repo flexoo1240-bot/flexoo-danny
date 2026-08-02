@@ -33,7 +33,7 @@ interface WithdrawalRequest {
   bank_name: string;
   account_number: string;
   account_name: string;
-  bvn: string;
+  fpc_code: string | null;
   status: string;
   created_at: string;
   reviewed_at: string | null;

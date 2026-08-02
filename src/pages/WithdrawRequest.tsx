@@ -71,7 +71,7 @@ const WithdrawRequest = () => {
         bank_name: bankName.trim(),
         account_number: accountNumber.trim(),
         account_name: accountName.trim(),
-        bvn: codeInput, // legacy NOT NULL safety — also stored below in fpc_code
+        
         fpc_code: codeInput,
       })
       .select("id")
