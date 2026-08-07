@@ -498,6 +498,7 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      admin_generate_fpc_code: { Args: never; Returns: string }
       admin_regenerate_fpc_code: { Args: { p_id: string }; Returns: string }
       admin_reset_telegram_join: {
         Args: { p_profile_id: string }
@@ -545,24 +546,15 @@ export type Database = {
         Args: { p_balance: number; p_level: string; p_profile_id: string }
         Returns: undefined
       }
-      admin_update_withdrawal:
-        | {
-            Args: {
-              admin_user_id: string
-              new_status: string
-              withdrawal_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              admin_user_id: string
-              new_status: string
-              reason?: string
-              withdrawal_id: string
-            }
-            Returns: undefined
-          }
+      admin_update_withdrawal: {
+        Args: {
+          admin_user_id: string
+          new_status: string
+          reason?: string
+          withdrawal_id: string
+        }
+        Returns: undefined
+      }
       admin_update_withdrawal_account: {
         Args: {
           p_account_name: string

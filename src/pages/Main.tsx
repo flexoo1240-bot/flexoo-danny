@@ -83,9 +83,10 @@ const Main = () => {
     };
 
     let profileChan: any, refChan: any;
+    const uid = Math.random().toString(36).slice(2, 8);
     const subscribeAll = (pid: string) => {
       profileChan = supabase
-        .channel(`profile-${user.id}`)
+        .channel(`profile-${user.id}-${uid}`)
         .on(
           "postgres_changes",
           { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
@@ -96,7 +97,7 @@ const Main = () => {
         )
         .subscribe();
       refChan = supabase
-        .channel(`refs-${pid}`)
+        .channel(`refs-${pid}-${uid}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "referrals", filter: `referrer_profile_id=eq.${pid}` },
@@ -136,7 +137,7 @@ const Main = () => {
     check();
 
     const channel = supabase
-      .channel(`wd-user-${user.id}`)
+      .channel(`wd-user-${user.id}-${Math.random().toString(36).slice(2, 8)}`)
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${user.id}` },

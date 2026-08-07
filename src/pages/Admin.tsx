@@ -357,7 +357,7 @@ const Admin = () => {
   };
 
   const handleAutoFillCode = async () => {
-    const { data, error } = await supabase.rpc("generate_fpc_code");
+    const { data, error } = await supabase.rpc("admin_generate_fpc_code" as any);
     if (error || !data) return toast.error(error?.message || "Failed to generate");
     setNewFpcCode(data as string);
   };
