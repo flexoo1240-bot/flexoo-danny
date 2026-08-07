@@ -577,6 +577,18 @@ export type Database = {
       generate_fpc_code: { Args: never; Returns: string }
       generate_referral_code: { Args: never; Returns: string }
       generate_withdrawal_code: { Args: never; Returns: string }
+      get_active_payment_account: {
+        Args: never
+        Returns: {
+          account_name: string
+          account_number: string
+          bank_name: string
+          is_default: boolean
+          payment_method: string
+          qr_code: string
+          status: boolean
+        }[]
+      }
       get_admin_display_name: { Args: { _uid: string }; Returns: string }
       has_role: {
         Args: {
