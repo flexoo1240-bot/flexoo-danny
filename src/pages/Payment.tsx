@@ -67,17 +67,11 @@ const Payment = () => {
   useEffect(() => {
     const load = async () => {
       const [{ data: acc }, { data: setting }] = await Promise.all([
-        supabase
-          .from("payment_accounts")
-          .select("bank_name, account_name, account_number, payment_method, qr_code, is_default, status")
-          .eq("status", true)
-          .order("is_default", { ascending: false })
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
+        supabase.rpc("get_active_payment_account"),
         supabase.from("app_settings").select("value").eq("key", "withdrawal_code_price").maybeSingle(),
       ]);
-      if (acc) setAccount(acc as ActiveAccount);
+      const active = Array.isArray(acc) ? acc[0] : acc;
+      if (active) setAccount(active as ActiveAccount);
       const p = Number(setting?.value);
       if (Number.isFinite(p) && p > 0) setPrice(p);
     };
