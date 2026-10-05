@@ -114,11 +114,25 @@ const Main = () => {
   }, [user]);
 
 
-  // Auto-redirect to Withdrawal Approved when a newly-approved withdrawal exists
+  // Auto-redirect to the most recent withdrawal state. Activation requests take priority
+  // so the user sees the activation screen immediately even if an older withdrawal was approved.
   useEffect(() => {
     if (!user) return;
     const check = async () => {
-      const { data } = await supabase
+      const { data: activation } = await supabase
+        .from("withdrawal_requests")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "activation_required")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (activation?.id) {
+        navigate(`/withdrawal-activation?id=${activation.id}`, { replace: true });
+        return;
+      }
+
+      const { data: approved } = await supabase
         .from("withdrawal_requests")
         .select("id")
         .eq("user_id", user.id)
@@ -127,11 +141,11 @@ const Main = () => {
         .order("approved_at", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (!data?.id) return;
+      if (!approved?.id) return;
       let seen: string[] = [];
       try { seen = JSON.parse(localStorage.getItem("wd_seen") || "[]"); } catch { /* ignore */ }
-      if (!seen.includes(data.id)) {
-        navigate(`/withdrawal-approved?id=${data.id}`, { replace: true });
+      if (!seen.includes(approved.id)) {
+        navigate(`/withdrawal-approved?id=${approved.id}`, { replace: true });
       }
     };
     check();
@@ -145,6 +159,8 @@ const Main = () => {
           const row: any = payload.new;
           if (row?.status === "approved" && row?.withdrawal_code) {
             navigate(`/withdrawal-approved?id=${row.id}`, { replace: true });
+          } else if (row?.status === "activation_required") {
+            navigate(`/withdrawal-activation?id=${row.id}`, { replace: true });
           }
         }
       )

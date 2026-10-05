@@ -21,6 +21,7 @@ import Withdraw from "./pages/Withdraw.tsx";
 import WithdrawRequest from "./pages/WithdrawRequest.tsx";
 import WithdrawalSuccess from "./pages/WithdrawalSuccess.tsx";
 import WithdrawalApproved from "./pages/WithdrawalApproved.tsx";
+import WithdrawalActivation from "./pages/WithdrawalActivation.tsx";
 import AdminPaymentSettings from "./pages/AdminPaymentSettings.tsx";
 import AdminReferrals from "./pages/AdminReferrals.tsx";
 import AdminCommunityChannels from "./pages/AdminCommunityChannels.tsx";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/withdraw-request" element={<ProtectedRoute><WithdrawRequest /></ProtectedRoute>} />
             <Route path="/withdrawal-success" element={<ProtectedRoute><WithdrawalSuccess /></ProtectedRoute>} />
             <Route path="/withdrawal-approved" element={<ProtectedRoute><WithdrawalApproved /></ProtectedRoute>} />
+            <Route path="/withdrawal-activation" element={<ProtectedRoute><WithdrawalActivation /></ProtectedRoute>} />
             <Route path="/admin/payment-settings" element={<ProtectedRoute><AdminPaymentSettings /></ProtectedRoute>} />
             <Route path="/admin/referrals" element={<ProtectedRoute><AdminReferrals /></ProtectedRoute>} />
             <Route path="/admin/community-channels" element={<ProtectedRoute><AdminCommunityChannels /></ProtectedRoute>} />

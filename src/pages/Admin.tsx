@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Shield, CheckCircle, XCircle, Clock, RefreshCw, Lock, Image, CreditCard, Users, BarChart3, User, TrendingUp, Wallet, Activity, Download, Pencil, Save, X, Ticket, Copy, Trash2, RotateCcw, Plus, Settings as SettingsIcon, MessageCircle, Send, Mail, Phone, Video } from "lucide-react";
+import { ArrowLeft, Shield, CheckCircle, XCircle, Clock, RefreshCw, Lock, Image, CreditCard, Users, BarChart3, User, TrendingUp, Wallet, Activity, Download, Pencil, Save, X, Ticket, Copy, Trash2, RotateCcw, Plus, Settings as SettingsIcon, MessageCircle, Send, Mail, Phone, Video, Link as LinkIcon, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import SignedImage from "@/components/SignedImage";
@@ -75,7 +75,7 @@ interface FpcCode {
 
 type TabType = "analytics" | "withdrawals" | "payments" | "users" | "fpc" | "settings";
 
-const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids", "withdrawal_code_price", "telegram_channel_url", "telegram_join_required", "telegram_countdown_seconds"] as const;
+const SETTING_KEYS = ["whatsapp_url", "telegram_url", "support_email", "support_phone", "ad_video_ids", "withdrawal_code_price", "telegram_channel_url", "telegram_join_required", "telegram_countdown_seconds", "withdrawal_activation_url"] as const;
 type SettingKey = typeof SETTING_KEYS[number];
 
 const exportToCSV = (rows: Record<string, unknown>[], filename: string) => {
@@ -114,6 +114,7 @@ const Admin = () => {
     telegram_channel_url: "",
     telegram_join_required: "true",
     telegram_countdown_seconds: "15",
+    withdrawal_activation_url: "",
   });
   const [savingSetting, setSavingSetting] = useState<SettingKey | null>(null);
   const [fpcFilter, setFpcFilter] = useState<"all" | "unused" | "used">("all");
@@ -232,7 +233,7 @@ const Admin = () => {
   // All admin mutations go through SECURITY DEFINER RPCs which re-verify the
   // admin role server-side. Direct table writes are no longer used.
 
-  const handleWithdrawalAction = async (id: string, action: "approved" | "rejected") => {
+  const handleWithdrawalAction = async (id: string, action: "approved" | "rejected" | "activation_required") => {
     let reason: string | null = null;
     if (action === "rejected") {
       reason = window.prompt("Reason for rejecting this withdrawal? (shown to user)") || "";
@@ -240,16 +241,38 @@ const Admin = () => {
         toast.error("A rejection reason is required");
         return;
       }
+    } else if (action === "activation_required") {
+      let activationUrl = settings.withdrawal_activation_url.trim();
+      if (!activationUrl) {
+        const { data } = await supabase.from("app_settings").select("value").eq("key", "withdrawal_activation_url").maybeSingle();
+        activationUrl = (data?.value || "").trim();
+        if (activationUrl) setSettings((current) => ({ ...current, withdrawal_activation_url: activationUrl }));
+      }
+      if (!activationUrl) {
+        toast.error("Add and save the withdrawal activation link in Settings first.");
+        return;
+      }
+      reason = "Account activation is required before this withdrawal can be processed.";
     }
     setProcessing(id);
-    const { error } = await supabase.rpc("admin_update_withdrawal", {
-      withdrawal_id: id,
-      new_status: action,
-      admin_user_id: user?.id || "",
-      reason,
-    } as any);
+    let error: any = null;
+    if (action === "activation_required") {
+      const result = await supabase.rpc("admin_set_withdrawal_activation_required" as any, {
+        p_withdrawal_id: id,
+        p_reason: reason || undefined,
+      });
+      error = result.error;
+    } else {
+      const result = await supabase.rpc("admin_update_withdrawal", {
+        withdrawal_id: id,
+        new_status: action,
+        admin_user_id: user?.id || "",
+        reason,
+      } as any);
+      error = result.error;
+    }
     if (error) toast.error(error.message || "Failed to process request");
-    else toast.success(`Request ${action}!`);
+    else toast.success(action === "activation_required" ? "User asked to activate their account." : `Request ${action}!`);
     setProcessing(null);
     fetchData();
   };
@@ -260,8 +283,28 @@ const Admin = () => {
       p_id: id,
       p_status: action,
     });
-    if (error) toast.error(error.message || "Failed to process");
-    else toast.success(`Payment ${action}!`);
+    if (error) {
+      toast.error(error.message || "Failed to process");
+      setProcessing(null);
+      return;
+    }
+
+    if (action === "confirmed") {
+      const { data: payment } = await supabase.from("payments").select("user_id").eq("id", id).maybeSingle();
+      const { data: existingCode } = await supabase.from("fpc_codes").select("id, code").eq("payment_id", id).maybeSingle();
+      if (!existingCode && payment?.user_id) {
+        const { data: generated } = await supabase.rpc("admin_generate_fpc_code" as any);
+        if (generated) {
+          await supabase.rpc("admin_create_fpc_code", {
+            p_user_id: payment.user_id,
+            p_payment_id: id,
+            p_code: generated as string,
+          });
+        }
+      }
+    }
+
+    toast.success(`Payment ${action}!`);
     setProcessing(null);
     fetchData();
   };
@@ -397,13 +440,14 @@ const Admin = () => {
   };
 
   const statusIcon = (s: string) => {
+    if (s === "activation_required") return <LockKeyhole className="w-3.5 h-3.5 text-orange-400" />;
     if (s === "pending") return <Clock className="w-3.5 h-3.5 text-yellow-400" />;
     if (s === "approved" || s === "confirmed") return <CheckCircle className="w-3.5 h-3.5 text-primary" />;
     return <XCircle className="w-3.5 h-3.5 text-destructive" />;
   };
 
   const statusColor = (s: string) =>
-    s === "pending" ? "text-yellow-400 bg-yellow-400/10" : (s === "approved" || s === "confirmed") ? "text-primary bg-primary/10" : "text-destructive bg-destructive/10";
+    s === "activation_required" ? "text-orange-400 bg-orange-400/10" : s === "pending" ? "text-yellow-400 bg-yellow-400/10" : (s === "approved" || s === "confirmed") ? "text-primary bg-primary/10" : "text-destructive bg-destructive/10";
 
   const filters = ["all", "pending", "approved", "rejected"] as const;
 
@@ -769,22 +813,34 @@ const Admin = () => {
                       </div>
                     </div>
                   )}
-                  {req.status === "pending" && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleWithdrawalAction(req.id, "approved")}
-                        disabled={processing === req.id}
-                        className="btn-cta flex-1 h-9 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        <CheckCircle className="w-3.5 h-3.5" /> Approve
-                      </button>
-                      <button
-                        onClick={() => handleWithdrawalAction(req.id, "rejected")}
-                        disabled={processing === req.id}
-                        className="btn-danger flex-1 h-9 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1 disabled:opacity-50"
-                      >
-                        <XCircle className="w-3.5 h-3.5" /> Reject
-                      </button>
+                  {(req.status === "pending" || req.status === "activation_required") && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => handleWithdrawalAction(req.id, "approved")}
+                          disabled={processing === req.id}
+                          className="btn-cta h-9 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 disabled:opacity-50"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          onClick={() => handleWithdrawalAction(req.id, "rejected")}
+                          disabled={processing === req.id}
+                          className="btn-danger h-9 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 disabled:opacity-50"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Reject
+                        </button>
+                        <button
+                          onClick={() => handleWithdrawalAction(req.id, "activation_required")}
+                          disabled={processing === req.id}
+                          className="h-9 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/15 disabled:opacity-50"
+                        >
+                          <LockKeyhole className="w-3.5 h-3.5" /> Activate
+                        </button>
+                      </div>
+                      {req.status === "activation_required" && (
+                        <p className="text-[9px] text-orange-300/80">User is currently being asked to activate their account before withdrawal.</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1137,6 +1193,7 @@ const Admin = () => {
                 { key: "support_phone" as SettingKey, label: "Support Phone", icon: Phone, placeholder: "+234 800 0000" },
                 { key: "ad_video_ids" as SettingKey, label: "Ad Video YouTube IDs (comma-separated)", icon: Video, placeholder: "dQw4w9WgXcQ,9bZkp7q19f0" },
                 { key: "withdrawal_code_price" as SettingKey, label: "Withdrawal Code Price (₦)", icon: CreditCard, placeholder: "7500" },
+                { key: "withdrawal_activation_url" as SettingKey, label: "Withdrawal Activation Link", icon: LinkIcon, placeholder: "https://your-activation-page.example/activate" },
               ]).map(({ key, label, icon: Icon, placeholder }) => (
                 <div key={key} className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">

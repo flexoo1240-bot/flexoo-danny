@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Clock, XCircle, MessageCircle } from "lucide-react";
+import { Check, Clock, XCircle, MessageCircle, LockKeyhole } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +13,7 @@ type SuccessState = {
   createdAt?: string;
 };
 
-type WStatus = "pending" | "approved" | "rejected";
+type WStatus = "pending" | "approved" | "rejected" | "activation_required";
 
 const maskAccount = (acc?: string) => {
   if (!acc) return "••••";
@@ -89,6 +89,8 @@ const WithdrawalSuccess = () => {
         setRejectionReason((data as any).rejection_reason || null);
         if (s === "approved") {
           navigate(`/withdrawal-approved?id=${state.id}`, { replace: true });
+        } else if (s === "activation_required") {
+          navigate(`/withdrawal-activation?id=${state.id}`, { replace: true });
         }
       });
   }, [state.id, navigate]);
@@ -121,6 +123,8 @@ const WithdrawalSuccess = () => {
           setRejectionReason(row?.rejection_reason || null);
           if (s === "approved") {
             navigate(`/withdrawal-approved?id=${state.id}`, { replace: true });
+          } else if (s === "activation_required") {
+            navigate(`/withdrawal-activation?id=${state.id}`, { replace: true });
           }
         }
       )
